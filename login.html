@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - Huntmate</title>
+
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+
+<body>
+
+<div class="auth-shell">
+  <section class="auth-hero">
+    <div class="auth-hero-card">
+      <div class="auth-hero-content">
+        <div class="auth-kicker">Companion-led travel</div>
+        <div class="auth-brand">
+          <span class="brand-mark">H</span>
+          <span>HUNTMATE.</span>
+        </div>
+        <h1 class="display-title">Find your people before you find the place.</h1>
+        <p class="auth-copy">
+          A warm, premium basecamp for explorers who want trusted partners, memorable itineraries, and stories worth keeping.
+        </p>
+
+        <div class="auth-highlights">
+          <div class="auth-stat">
+            <strong>02</strong>
+            <span>Minutes to sign in and get moving.</span>
+          </div>
+          <div class="auth-stat">
+            <strong>Live</strong>
+            <span>Feed, profiles, and shared adventures.</span>
+          </div>
+          <div class="auth-stat">
+            <strong>Curated</strong>
+            <span>Designed for meaningful travel partners.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-panel">
+    <div class="card auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark">H</span>
+        <span>HUNTMATE.</span>
+      </div>
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="text-muted">Log in to continue building plans, posting updates, and meeting your next travel crew.</p>
+
+      <form id="loginForm" class="auth-form">
+        <div class="mb-2">
+          <label for="email">Email</label>
+          <input id="email" type="email" class="input" required>
+        </div>
+
+        <div class="mb-2">
+          <label for="password">Password</label>
+          <input id="password" type="password" class="input" required>
+        </div>
+
+        <button class="btn btn-primary w-100">
+          Log In
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Do not have an account?
+        <a href="signup.html">Sign up</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const supabaseClient = createSupabaseClient();
+
+document.getElementById("loginForm")
+.addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+    alert("Login failed: " + error.message);
+    return;
+  }
+
+  window.location.href = "index.html";
+
+});
+
+</script>
+
+</body>
+</html>

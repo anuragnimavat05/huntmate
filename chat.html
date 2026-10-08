@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat - Huntmate</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">H</span>
+        <div>
+          <div class="brand-title">HUNTMATE.</div>
+          <div class="brand-subtitle">Adventure journal network</div>
+        </div>
+      </div>
+      <div>
+        <div class="nav-section-label">Explore</div>
+        <nav>
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="find-huntmate.html" class="nav-link">Find Partners</a>
+          <a href="treasure-hunt.html" class="nav-link">Treasure Hunts</a>
+          <a href="chat.html" class="nav-link active">Messages</a>
+          <a href="notifications.html" class="nav-link">Notifications</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="shell-content">
+        <section class="page-hero">
+          <div class="eyebrow">Conversation suite</div>
+          <h1 class="hero-title">Messages</h1>
+          <p class="hero-copy">Stay in touch with potential partners, send shared posts, and keep your planning in one warm conversation flow.</p>
+        </section>
+
+        <section class="chat-layout">
+          <div class="card chat-list" id="chatList">
+            <div class="section-heading">Recent chats</div>
+            <div class="chat-empty">Loading your conversations...</div>
+          </div>
+
+          <div class="card chat-panel">
+            <div class="chat-header">
+              <div style="display:flex; gap:14px; align-items:center;" id="chatHeader">
+                <img src="https://i.pravatar.cc/150?u=default" class="avatar avatar-md">
+                <div>
+                  <h4 style="margin:0;">Messages</h4>
+                  <p class="text-muted" style="font-size: 0.8rem; margin:0;">Choose a conversation to begin.</p>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="window.location.href='index.html'">Back To Feed</button>
+            </div>
+
+            <div class="chat-body" id="chat-feed">
+              <div class="chat-empty">No conversation selected yet.</div>
+            </div>
+
+            <div class="chat-inputbar">
+              <input type="text" class="input" placeholder="Type a message..." id="msg-input">
+              <button class="btn btn-primary" type="button" onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function createSupabaseClient() {
+      const url = window.HUNTMATE_SUPABASE_URL;
+      const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+      if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+        throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+      }
+
+      return supabase.createClient(url, anonKey);
+    }
+
+    const db = createSupabaseClient();
+    let activeUser = null;
+    let activeProfile = null;
+    let conversations = [];
+    let selectedChatUserId = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function formatRelativeTime(value) {
+      const date = value ? new Date(value) : new Date();
+      const diffMinutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60000));
+
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+      const diffHours = Math.round(diffMinutes / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+
+      const diffDays = Math.round(diffHours / 24);
+      return `${diffDays}d ago`;
+    }
+
+    function buildConversationId(firstId, secondId) {
+      return [firstId, secondId].sort().join("::");
+    }
+
+    function getViewerUsername() {
+      return activeProfile?.username || activeProfile?.full_name || activeUser?.email || "user";
+    }
+
+    function createSharedPostCard(post) {
+      return `
+        <div class="shared-post-card">
+          <div class="shared-post-header">
+            <strong>@${escapeHtml(post.username || "user")}</strong>
+            <span class="text-muted">${escapeHtml(post.createdLabel || "Shared from the feed")}</span>
+          </div>
+          <div>${escapeHtml(post.content || "Shared a post")}</div>
+          ${post.image_url ? `<img src="${escapeHtml(post.image_url)}" alt="Shared post image">` : ""}
+        </div>
+      `;
+    }
+
+    async function getUser() {
+      const { data:{ session } } = await db.auth.getSession();
+
+      if (!session) {
+        window.location.href = "login.html";
+        return null;
+      }
+
+      return session.user;
+    }
+
+    async function loadActiveProfile() {
+      const user = await getUser();
+      if (!user) return null;
+
+      activeUser = user;
+
+      const { data, error } = await db
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      activeProfile = data;
+      return data;
+    }
+
+    async function fetchAcceptedProfiles() {
+      const { data: requestRows, error } = await db
+        .from("friend_requests")
+        .select("*")
+        .or(`sender_id.eq.${activeUser.id},receiver_id.eq.${activeUser.id}`);
+
+      if (error) {
+        console.error(error);
+        return [];
+      }
+
+      const acceptedRows = (requestRows || []).filter((row) => row.status === "accepted");
+      const ids = [...new Set(acceptedRows.map((row) =>
+        row.sender_id === activeUser.id ? row.receiver_id : row.sender_id
+      ))];
+
+      if (!ids.length) {
+        return [];
+      }
+
+      const { data: profiles, error: profilesError } = await db
+        .from("profiles")
+        .select("id, full_name, username, avatar_url, location, style")
+        .in("id", ids);
+
+      if (profilesError) {
+        console.error(profilesError);
+        return [];
+      }
+
+      return profiles || [];
+    }
+
+    async function fetchMessagesForProfiles(profiles) {
+      if (!profiles.length) {
+        return [];
+      }
+
+      const conversationIds = profiles.map((profile) => buildConversationId(activeUser.id, profile.id));
+      const { data, error } = await db
+        .from("messages")
+        .select("id, conversation_id, sender_id, receiver_id, sender, message, type, post_json, created_at")
+        .in("conversation_id", conversationIds)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      return data || [];
+    }
+
+    async function buildConversationList(profiles) {
+      const messageRows = await fetchMessagesForProfiles(profiles);
+
+      if (messageRows === null) {
+        document.getElementById("chat-feed").innerHTML = '<div class="chat-empty">Update the messages table in Supabase to enable database chat.</div>';
+        return;
+      }
+
+      conversations = profiles.map((profile) => {
+        const conversationId = buildConversationId(activeUser.id, profile.id);
+        const messages = messageRows
+          .filter((message) => message.conversation_id === conversationId)
+          .map((message) => ({
+            id: message.id,
+            conversationId: message.conversation_id,
+            senderId: message.sender_id,
+            receiverId: message.receiver_id,
+            senderUsername: message.sender,
+            type: message.type || "text",
+            text: message.message,
+            post: message.post_json || null,
+            createdAt: message.created_at
+          }));
+
+        return {
+          profile,
+          conversationId,
+          messages
+        };
+      });
+    }
+
+    function renderConversationList() {
+      const list = document.getElementById("chatList");
+
+      if (!conversations.length) {
+        list.innerHTML = `
+          <div class="section-heading">Recent chats</div>
+          <div class="chat-empty">Accept some friend requests first. Your message inbox will appear here.</div>
+        `;
+        return;
+      }
+
+      list.innerHTML = `
+        <div class="section-heading">Recent chats</div>
+        ${conversations.map((conversation) => {
+          const preview = conversation.messages[conversation.messages.length - 1];
+          const previewText = preview
+            ? (preview.type === "shared_post" ? "Shared a post" : preview.text)
+            : "Start this conversation";
+
+          return `
+            <button class="chat-list-item ${conversation.profile.id === selectedChatUserId ? "active" : ""}" type="button" onclick="selectConversation('${conversation.profile.id}')">
+              <img src="${escapeHtml(conversation.profile.avatar_url || `https://i.pravatar.cc/150?u=${conversation.profile.id}`)}" class="avatar avatar-md">
+              <div style="text-align:left;">
+                <h5 style="margin:0;">${escapeHtml(conversation.profile.full_name || conversation.profile.username || "Explorer")}</h5>
+                <p class="text-muted" style="font-size: 0.85rem; margin:0;">${escapeHtml(previewText)}</p>
+              </div>
+            </button>
+          `;
+        }).join("")}
+      `;
+    }
+
+    function renderHeader(profile) {
+      document.getElementById("chatHeader").innerHTML = `
+        <img src="${escapeHtml(profile.avatar_url || `https://i.pravatar.cc/150?u=${profile.id}`)}" class="avatar avatar-md">
+        <div>
+          <h4 style="margin:0;">${escapeHtml(profile.full_name || profile.username || "Explorer")}</h4>
+          <p class="text-muted" style="font-size: 0.8rem; margin:0;">@${escapeHtml(profile.username || "user")}</p>
+        </div>
+      `;
+    }
+
+    function renderMessages() {
+      const feed = document.getElementById("chat-feed");
+      const conversation = conversations.find((item) => item.profile.id === selectedChatUserId);
+
+      if (!conversation) {
+        feed.innerHTML = '<div class="chat-empty">Pick a chat from the left to start messaging.</div>';
+        return;
+      }
+
+      renderHeader(conversation.profile);
+
+      if (!conversation.messages.length) {
+        feed.innerHTML = '<div class="chat-empty">No messages yet. Say hello or share something from the feed.</div>';
+        return;
+      }
+
+      feed.innerHTML = conversation.messages.map((message) => {
+        const isOutgoing = message.senderId === activeUser.id;
+        const content = message.type === "shared_post"
+          ? `${message.text ? `<div>${escapeHtml(message.text)}</div>` : ""}${createSharedPostCard(message.post || {})}`
+          : escapeHtml(message.text || "");
+
+        return `
+          <div class="msg ${isOutgoing ? "msg-out" : "msg-in"}">
+            ${content}
+            <div class="text-muted" style="font-size:0.78rem; margin-top:8px; color:inherit; opacity:0.78;">${escapeHtml(formatRelativeTime(message.createdAt))}</div>
+          </div>
+        `;
+      }).join("");
+
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function selectConversation(userId) {
+      selectedChatUserId = userId;
+      const query = new URLSearchParams(window.location.search);
+      query.set("user", userId);
+      history.replaceState({}, "", `${window.location.pathname}?${query.toString()}`);
+      renderConversationList();
+      renderMessages();
+    }
+
+    async function sendMessage() {
+      if (!selectedChatUserId) {
+        alert("Choose a chat first.");
+        return;
+      }
+
+      const input = document.getElementById("msg-input");
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      const payload = {
+        conversationId: buildConversationId(activeUser.id, selectedChatUserId),
+        senderId: activeUser.id,
+        receiverId: selectedChatUserId,
+        senderUsername: getViewerUsername(),
+        type: "text",
+        text
+      };
+
+      const { error } = await db
+        .from("messages")
+        .insert({
+          conversation_id: payload.conversationId,
+          sender_id: payload.senderId,
+          receiver_id: payload.receiverId,
+          sender: payload.senderUsername,
+          message: payload.text,
+          type: payload.type
+        });
+
+      if (error) {
+        console.error(error);
+        alert(error.message);
+        return;
+      }
+
+      input.value = "";
+      await buildConversationList(conversations.map((conversation) => conversation.profile));
+      renderConversationList();
+      renderMessages();
+    }
+
+    async function initializeChat() {
+      const profile = await loadActiveProfile();
+
+      if (!profile) {
+        return;
+      }
+
+      const profiles = await fetchAcceptedProfiles();
+      await buildConversationList(profiles);
+
+      const requestedUserId = new URLSearchParams(window.location.search).get("user");
+      if (requestedUserId && profiles.some((item) => item.id === requestedUserId)) {
+        selectedChatUserId = requestedUserId;
+      } else if (profiles[0]) {
+        selectedChatUserId = profiles[0].id;
+      }
+
+      renderConversationList();
+      renderMessages();
+    }
+
+    document.getElementById("msg-input")
+      .addEventListener("keydown", async (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          await sendMessage();
+        }
+      });
+
+    initializeChat();
+  </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Up - Huntmate</title>
+
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+
+<body>
+
+<div class="auth-shell">
+  <section class="auth-hero">
+    <div class="auth-hero-card">
+      <div class="auth-hero-content">
+        <div class="auth-kicker">Set your route</div>
+        <div class="auth-brand">
+          <span class="brand-mark">H</span>
+          <span>HUNTMATE.</span>
+        </div>
+        <h1 class="display-title">Create a profile that feels ready for the road.</h1>
+        <p class="auth-copy">
+          Join a travel-focused network built around shared style, trusted introductions, and adventure stories that keep moving.
+        </p>
+
+        <div class="auth-highlights">
+          <div class="auth-stat">
+            <strong>Profile</strong>
+            <span>Tell people how you travel, not just where.</span>
+          </div>
+          <div class="auth-stat">
+            <strong>Feed</strong>
+            <span>Post updates and discover fellow explorers.</span>
+          </div>
+          <div class="auth-stat">
+            <strong>Hunts</strong>
+            <span>Step into playful routes and curated quests.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-panel">
+    <div class="card auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark">H</span>
+        <span>HUNTMATE.</span>
+      </div>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="text-muted">Start with your email and password, then complete your explorer profile on the next screen.</p>
+
+      <form id="signupForm" class="auth-form">
+        <div class="mb-2">
+          <label for="email">Email</label>
+          <input id="email" type="email" class="input" required>
+        </div>
+
+        <div class="mb-2">
+          <label for="password">Password</label>
+          <input id="password" type="password" class="input" required>
+        </div>
+
+        <button class="btn btn-primary w-100">
+          Sign Up
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account?
+        <a href="login.html">Log in</a>
+      </div>
+
+      <button id="theme-toggle" class="btn btn-ghost auth-theme-toggle">
+        Switch Theme
+      </button>
+    </div>
+  </section>
+</div>
+
+<script>
+
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const supabaseClient = createSupabaseClient();
+
+document.getElementById("signupForm")
+  .addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+
+    const { error } = await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    const { data: sessionData } =
+      await supabaseClient.auth.getSession();
+
+    if (sessionData.session) {
+      window.location.href = "setup-profile.html";
+    } else {
+      alert("Confirm your email, then log in.");
+      window.location.href = "login.html";
+    }
+
+  });
+
+const toggle = document.getElementById("theme-toggle");
+const savedTheme = localStorage.getItem("theme") || "dark";
+
+document.body.dataset.theme = savedTheme;
+
+toggle.addEventListener("click", () => {
+  const next = document.body.dataset.theme === "dark" ? "light" : "dark";
+  document.body.dataset.theme = next;
+  localStorage.setItem("theme", next);
+});
+
+</script>
+
+</body>
+</html>

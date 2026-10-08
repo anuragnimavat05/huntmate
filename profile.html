@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Profile - Huntmate</title>
+
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+</head>
+
+<body>
+
+<div class="app-wrapper">
+
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-mark">H</span>
+    <div>
+      <div class="brand-title">HUNTMATE.</div>
+      <div class="brand-subtitle">Adventure journal network</div>
+    </div>
+  </div>
+  <div>
+    <div class="nav-section-label">Explore</div>
+    <nav>
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="find-huntmate.html" class="nav-link">Find Partners</a>
+      <a href="treasure-hunt.html" class="nav-link">Treasure Hunts</a>
+      <a href="chat.html" class="nav-link">Messages</a>
+      <a href="notifications.html" class="nav-link">Notifications</a>
+      <a href="profile.html" class="nav-link active">Profile</a>
+    </nav>
+  </div>
+
+  <div class="sidebar-footer">
+    <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+  </div>
+</aside>
+
+<main class="main-content">
+  <div class="shell-content">
+    <section class="page-hero">
+      <div class="profile-hero">
+        <img id="avatar"
+             src="https://i.pravatar.cc/150"
+             class="profile-avatar">
+
+        <div>
+          <div class="eyebrow">Explorer card</div>
+          <div class="profile-name" id="name">Loading...</div>
+          <div class="profile-username" id="username">@user</div>
+          <div class="hero-meta" id="profile-tags">
+            <span class="stat-chip">Open to new routes</span>
+            <span class="stat-chip">Feed-connected profile</span>
+          </div>
+        </div>
+
+        <div class="stack" style="min-width: 180px;">
+          <button class="btn btn-outline" id="editProfileButton" type="button" onclick="toggleEditProfile()" hidden>
+            Edit Profile
+          </button>
+          <button class="btn btn-primary" id="profileActionButton" onclick="handleProfileAction()">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="stat-card">
+          <h2 id="hunts-count">0</h2>
+          <p>Hunts</p>
+        </div>
+
+        <div class="stat-card">
+          <h2 id="followers-count">0</h2>
+          <p>Followers</p>
+        </div>
+
+        <div class="stat-card">
+          <h2 id="xp-count">0</h2>
+          <p>XP</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="card section-card">
+        <h2 class="section-heading">About Me</h2>
+        <p id="bio" class="section-subtitle">No bio yet</p>
+
+        <div class="detail-list">
+          <div class="detail-item">
+            <span class="detail-label">Location</span>
+            <span id="location">Unknown</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Travel Style</span>
+            <span id="style">Not set</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Age</span>
+            <span id="age">Not set</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Budget</span>
+            <span id="budget">Not set</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Gender</span>
+            <span id="gender">Not set</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card section-card">
+          <h3 class="section-heading">Profile mood</h3>
+          <p class="text-muted">This refreshed view keeps the same data bindings, but presents them like a travel portfolio instead of a generic account page.</p>
+        </div>
+
+        <div class="card metric-card">
+          <span class="badge badge-primary">Live profile</span>
+          <strong>Ready for discovery.</strong>
+          <p class="text-muted">As your profile fills out, the companion and feed experience becomes easier to trust and explore.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="stack" style="margin-top: 28px;">
+      <div class="card section-card" id="editProfileCard" hidden>
+        <div class="flex-between mb-2">
+          <div>
+            <h2 class="section-heading">Edit Profile</h2>
+            <p class="section-subtitle">Update your public details anytime.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="toggleEditProfile(false)">Close</button>
+        </div>
+
+        <form id="editProfileForm">
+          <label for="editAvatarFile">Avatar Image</label>
+          <input type="file" id="editAvatarFile" accept="image/*" class="input mb-2">
+
+          <div class="grid grid-2">
+            <div>
+              <label for="editFullName">Name</label>
+              <input id="editFullName" class="input mb-2" placeholder="Prince Varma">
+            </div>
+
+            <div>
+              <label for="editUsername">Username</label>
+              <input id="editUsername" class="input mb-2" placeholder="@prince_k.s" required>
+            </div>
+          </div>
+
+          <label for="editBio">Bio</label>
+          <textarea id="editBio" class="input mb-2" placeholder="Tell your story..."></textarea>
+
+          <div class="grid grid-2">
+            <div>
+              <label for="editLocation">Location</label>
+              <input id="editLocation" class="input mb-2" placeholder="Gujarat">
+            </div>
+
+            <div>
+              <label for="editStyle">Travel Style</label>
+              <input id="editStyle" class="input mb-2" placeholder="Budget / Heritage">
+            </div>
+          </div>
+
+          <div class="grid grid-3">
+            <div>
+              <label for="editAge">Age</label>
+              <input id="editAge" type="number" min="18" class="input mb-2" placeholder="24">
+            </div>
+
+            <div>
+              <label for="editBudget">Budget</label>
+              <select id="editBudget" class="input mb-2">
+                <option value="">Select budget</option>
+                <option value="Budget">Budget</option>
+                <option value="Mid-range">Mid-range</option>
+                <option value="Luxury">Luxury</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="editGender">Gender</label>
+              <select id="editGender" class="input mb-2">
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="editTags">Tags</label>
+          <input id="editTags" class="input mb-2" placeholder="Trekking, Backpacking, Culture">
+
+          <div class="flex-between">
+            <span class="text-muted" id="editProfileStatus">Changes update your public profile instantly.</span>
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card section-card">
+        <div class="flex-between mb-2">
+          <div>
+            <h2 class="section-heading">Posts</h2>
+            <p class="section-subtitle" id="profilePostsSubtitle">Adventures shared by this explorer.</p>
+          </div>
+          <span class="badge badge-primary" id="profilePostsCount">0 posts</span>
+        </div>
+
+        <div id="profilePosts" class="stack"></div>
+      </div>
+    </section>
+  </div>
+</main>
+</div>
+
+<script>
+
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const db = createSupabaseClient();
+let currentSessionUser = null;
+let viewingOwnProfile = true;
+let currentProfile = null;
+let editProfileOpen = false;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatRelativeTime(value) {
+  const date = value ? new Date(value) : new Date();
+  const diffMinutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60000));
+
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function formatCount(value) {
+  const count = Number(value || 0);
+  return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : `${count}`;
+}
+
+function renderTags(rawTags) {
+  const container = document.getElementById("profile-tags");
+  const tags = (rawTags || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  if (tags.length === 0) {
+    container.innerHTML = `
+      <span class="stat-chip">Open to new routes</span>
+      <span class="stat-chip">Feed-connected profile</span>
+    `;
+    return;
+  }
+
+  container.innerHTML = tags
+    .map((tag) => `<span class="stat-chip">${tag}</span>`)
+    .join("");
+}
+
+function fillEditForm(profile) {
+  document.getElementById("editFullName").value = profile.full_name || "";
+  document.getElementById("editUsername").value = profile.username || "";
+  document.getElementById("editBio").value = profile.bio || "";
+  document.getElementById("editLocation").value = profile.location || "";
+  document.getElementById("editStyle").value = profile.style || "";
+  document.getElementById("editAge").value = profile.age || "";
+  document.getElementById("editBudget").value = profile.budget || "";
+  document.getElementById("editGender").value = profile.gender || "";
+  document.getElementById("editTags").value = profile.tags || "";
+}
+
+function toggleEditProfile(forceState) {
+  if (!viewingOwnProfile) return;
+
+  editProfileOpen = typeof forceState === "boolean" ? forceState : !editProfileOpen;
+  document.getElementById("editProfileCard").hidden = !editProfileOpen;
+  document.getElementById("editProfileButton").innerText = editProfileOpen ? "Close Editor" : "Edit Profile";
+}
+
+async function loadProfile() {
+  const { data:{session} } =
+    await db.auth.getSession();
+
+  if (!session) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentSessionUser = session.user;
+  const targetUserId =
+    new URLSearchParams(window.location.search).get("user") || session.user.id;
+
+  viewingOwnProfile = targetUserId === session.user.id;
+
+  const { data } =
+    await db
+      .from("profiles")
+      .select("*")
+      .eq("id", targetUserId)
+      .single();
+
+  if (!data) return;
+  currentProfile = data;
+
+  document.title = `${data.full_name || data.username || "Profile"} - Huntmate`;
+
+  const profileActionButton = document.getElementById("profileActionButton");
+  profileActionButton.innerText = viewingOwnProfile ? "Logout" : "My Profile";
+  document.getElementById("editProfileButton").hidden = !viewingOwnProfile;
+
+  document.getElementById("name").innerText =
+    data.full_name || "New User";
+
+  document.getElementById("username").innerText =
+    "@" + (data.username || "user");
+
+  document.getElementById("bio").innerText =
+    data.bio || "No bio yet";
+
+  document.getElementById("location").innerText =
+    data.location || "Unknown";
+
+  document.getElementById("style").innerText =
+    data.style || "Not set";
+
+  document.getElementById("age").innerText =
+    data.age || "Not set";
+
+  document.getElementById("budget").innerText =
+    data.budget || "Not set";
+
+  document.getElementById("gender").innerText =
+    data.gender || "Not set";
+
+  document.getElementById("hunts-count").innerText =
+    formatCount(data.hunts);
+
+  document.getElementById("followers-count").innerText =
+    formatCount(data.followers);
+
+  document.getElementById("xp-count").innerText =
+    formatCount(data.xp);
+
+  renderTags(data.tags);
+
+  if (data.avatar_url) {
+    document.getElementById("avatar").src =
+      data.avatar_url;
+  }
+
+  if (viewingOwnProfile) {
+    fillEditForm(data);
+  }
+
+  await loadProfilePosts(targetUserId);
+}
+
+loadProfile();
+
+async function loadProfilePosts(userId) {
+  const postsContainer = document.getElementById("profilePosts");
+  const postsCount = document.getElementById("profilePostsCount");
+  const subtitle = document.getElementById("profilePostsSubtitle");
+
+  subtitle.innerText = viewingOwnProfile
+    ? "Everything you have shared from the Huntmate feed."
+    : `Everything @${currentProfile?.username || "user"} has shared from the Huntmate feed.`;
+
+  const { data: posts, error } = await db
+    .from("posts")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    postsContainer.innerHTML = '<div class="feed-empty">Could not load posts right now.</div>';
+    postsCount.innerText = "Unavailable";
+    return;
+  }
+
+  const postList = posts || [];
+  postsCount.innerText = `${postList.length} post${postList.length === 1 ? "" : "s"}`;
+
+  if (!postList.length) {
+    postsContainer.innerHTML = '<div class="feed-empty">No posts shared yet.</div>';
+    return;
+  }
+
+  postsContainer.innerHTML = postList.map((post) => `
+    <div class="card post-card">
+      <div class="post-header">
+        <img src="${escapeHtml(currentProfile?.avatar_url || "https://i.pravatar.cc/150")}" class="avatar avatar-md">
+        <div class="post-header-copy">
+          <div class="post-username">@${escapeHtml(currentProfile?.username || "user")}</div>
+          <div class="text-muted">${escapeHtml(formatRelativeTime(post.created_at))}</div>
+        </div>
+      </div>
+
+      <div class="post-content">${escapeHtml(post.content || "")}</div>
+
+      ${post.image_url ? `<img src="${escapeHtml(post.image_url)}" class="post-image" alt="Post image">` : ""}
+    </div>
+  `).join("");
+}
+
+function handleProfileAction() {
+  if (viewingOwnProfile) {
+    logout();
+    return;
+  }
+
+  window.location.href = "profile.html";
+}
+
+async function logout() {
+  await db.auth.signOut();
+  window.location.href = "login.html";
+}
+
+document.getElementById("editProfileForm")
+  .addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!currentSessionUser || !viewingOwnProfile) {
+      return;
+    }
+
+    const status = document.getElementById("editProfileStatus");
+    status.innerText = "Saving changes...";
+
+    let avatarUrl = currentProfile?.avatar_url || null;
+    const file = document.getElementById("editAvatarFile").files[0];
+
+    if (file) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${currentSessionUser.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await db.storage
+        .from("avatars")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error(uploadError);
+        status.innerText = uploadError.message;
+        return;
+      }
+
+      const { data } = db.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      avatarUrl = data.publicUrl;
+    }
+
+    const updates = {
+      full_name: document.getElementById("editFullName").value,
+      username: document.getElementById("editUsername").value,
+      bio: document.getElementById("editBio").value,
+      location: document.getElementById("editLocation").value,
+      style: document.getElementById("editStyle").value,
+      age: document.getElementById("editAge").value ? Number(document.getElementById("editAge").value) : null,
+      budget: document.getElementById("editBudget").value,
+      gender: document.getElementById("editGender").value,
+      tags: document.getElementById("editTags").value,
+      avatar_url: avatarUrl
+    };
+
+    const { error } = await db
+      .from("profiles")
+      .update(updates)
+      .eq("id", currentSessionUser.id);
+
+    if (error) {
+      console.error(error);
+      status.innerText = error.message;
+      return;
+    }
+
+    document.getElementById("editAvatarFile").value = "";
+    status.innerText = "Profile updated.";
+    toggleEditProfile(false);
+    await loadProfile();
+  });
+
+</script>
+
+</body>
+</html>

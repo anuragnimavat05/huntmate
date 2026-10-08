@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Find Huntmate - Search</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">H</span>
+        <div>
+          <div class="brand-title">HUNTMATE.</div>
+          <div class="brand-subtitle">Adventure journal network</div>
+        </div>
+      </div>
+      <div>
+        <div class="nav-section-label">Explore</div>
+        <nav>
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="find-huntmate.html" class="nav-link active">Find Partners</a>
+          <a href="treasure-hunt.html" class="nav-link">Treasure Hunts</a>
+          <a href="chat.html" class="nav-link">Messages</a>
+          <a href="notifications.html" class="nav-link">Notifications</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+        </nav>
+      </div>
+      <div class="sidebar-footer">
+        <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="shell-content">
+        <section class="page-hero">
+          <div class="eyebrow">Companion search</div>
+          <h1 class="hero-title">Find Your Squad</h1>
+          <p class="hero-copy">Browse travelers who match your energy, preferred pace, and kind of trip. Filter by location, travel style, age, budget, and gender to find a better match.</p>
+        </section>
+
+        <section class="card section-card" style="margin-top:28px;">
+          <div class="flex-between mb-2">
+            <div>
+              <h2 class="section-heading">Refine the vibe</h2>
+              <p class="section-subtitle">Search real explorer profiles and send requests from the same page.</p>
+            </div>
+            <span class="badge badge-primary" id="resultsMeta">Live profiles</span>
+          </div>
+
+          <form class="filter-bar" id="searchForm">
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="queryInput">Search</label>
+              <input id="queryInput" class="input" placeholder="Name, @username, Goa, trekking, backpacking">
+            </div>
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="locationInput">Location</label>
+              <input id="locationInput" class="input" placeholder="Any location">
+            </div>
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="styleInput">Travel Style</label>
+              <input id="styleInput" class="input" placeholder="Adventure, luxury, culture">
+            </div>
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="ageInput">Age</label>
+              <input id="ageInput" type="number" min="18" class="input" placeholder="Any age">
+            </div>
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="budgetInput">Budget</label>
+              <select id="budgetInput" class="input">
+                <option value="">Any budget</option>
+                <option value="Budget">Budget</option>
+                <option value="Mid-range">Mid-range</option>
+                <option value="Luxury">Luxury</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-muted" style="font-size: 0.85rem;" for="genderInput">Gender</label>
+              <select id="genderInput" class="input">
+                <option value="">Any gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn btn-primary w-100" type="submit">Search</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="grid grid-3" style="margin-top:28px;" id="partnerResults">
+          <div class="feed-empty">Loading explorers...</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function createSupabaseClient() {
+      const url = window.HUNTMATE_SUPABASE_URL;
+      const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+      if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+        throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+      }
+
+      return supabase.createClient(url, anonKey);
+    }
+
+    const db = createSupabaseClient();
+    let activeUser = null;
+    let activeProfile = null;
+    let requestRows = [];
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function formatTags(rawTags) {
+      return (rawTags || "")
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+
+    function formatCount(value) {
+      const count = Number(value || 0);
+      return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : `${count}`;
+    }
+
+    async function getUser() {
+      const { data:{ session } } = await db.auth.getSession();
+
+      if (!session) {
+        window.location.href = "login.html";
+        return null;
+      }
+
+      return session.user;
+    }
+
+    async function loadActiveProfile() {
+      const user = await getUser();
+      if (!user) return null;
+
+      activeUser = user;
+
+      const { data, error } = await db
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      activeProfile = data;
+      return data;
+    }
+
+    async function fetchRequestRows() {
+      const { data, error } = await db
+        .from("friend_requests")
+        .select("*")
+        .or(`sender_id.eq.${activeUser.id},receiver_id.eq.${activeUser.id}`)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        requestRows = [];
+        return [];
+      }
+
+      requestRows = data || [];
+      return requestRows;
+    }
+
+    function getRequestStatusForUser(userId) {
+      return requestRows.find((item) =>
+        item.sender_id === userId || item.receiver_id === userId
+      ) || null;
+    }
+
+    function renderAction(profile) {
+      const request = getRequestStatusForUser(profile.id);
+
+      if (!request) {
+        return `<button class="btn btn-primary btn-sm w-100" type="button" onclick="sendFriendRequest('${profile.id}')">Connect</button>`;
+      }
+
+      if (request.status === "accepted") {
+        return `
+          <div class="split-actions">
+            <button class="btn btn-outline btn-sm w-100" type="button" disabled>Friends</button>
+            <button class="btn btn-primary btn-sm w-100" type="button" onclick="window.location.href='chat.html?user=${encodeURIComponent(profile.id)}'">Message</button>
+          </div>
+        `;
+      }
+
+      if (request.status === "pending" && request.receiver_id === activeUser.id) {
+        return `
+          <div class="split-actions">
+            <button class="btn btn-primary btn-sm w-100" type="button" onclick="respondToRequest('${request.id}', 'accepted')">Accept</button>
+            <button class="btn btn-outline btn-sm w-100" type="button" onclick="respondToRequest('${request.id}', 'declined')">Decline</button>
+          </div>
+        `;
+      }
+
+      if (request.status === "pending" && request.sender_id === activeUser.id) {
+        return `<button class="btn btn-outline btn-sm w-100" type="button" disabled>Request sent</button>`;
+      }
+
+      return `<button class="btn btn-primary btn-sm w-100" type="button" onclick="sendFriendRequest('${profile.id}')">Connect</button>`;
+    }
+
+    function renderProfiles(profiles) {
+      const results = document.getElementById("partnerResults");
+
+      if (!profiles.length) {
+        results.innerHTML = '<div class="feed-empty">No explorers matched your filters yet.</div>';
+        document.getElementById("resultsMeta").innerText = "0 results";
+        return;
+      }
+
+      results.innerHTML = profiles.map((profile) => {
+        const tags = formatTags(profile.tags);
+        const location = profile.location || "Location not added";
+        const style = profile.style || "Travel style not added";
+        const bio = profile.bio || "Ready for the next trip and open to meeting the right travel crew.";
+        const age = profile.age || "N/A";
+        const budget = profile.budget || "Not set";
+        const gender = profile.gender || "Not set";
+
+        return `
+          <div class="card hover-card partner-card">
+            <img src="${escapeHtml(profile.avatar_url || `https://i.pravatar.cc/150?u=${profile.id}`)}" class="avatar avatar-xl mb-1">
+            <div>
+              <h3>${escapeHtml(profile.full_name || profile.username || "Explorer")}</h3>
+              <p class="text-muted mb-1">${escapeHtml(location)} - ${escapeHtml(style)}</p>
+            </div>
+            <div class="mb-2">
+              ${(tags.length ? tags : ["Open to connect"]).map((tag) => `<span class="badge badge-primary">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+            <p class="text-muted partner-bio">"${escapeHtml(bio)}"</p>
+            <div class="partner-meta-grid">
+              <div class="partner-meta-item">
+                <span class="detail-label">Age</span>
+                <strong>${escapeHtml(age)}</strong>
+              </div>
+              <div class="partner-meta-item">
+                <span class="detail-label">Budget</span>
+                <strong>${escapeHtml(budget)}</strong>
+              </div>
+              <div class="partner-meta-item">
+                <span class="detail-label">Gender</span>
+                <strong>${escapeHtml(gender)}</strong>
+              </div>
+              <div class="partner-meta-item">
+                <span class="detail-label">Followers</span>
+                <strong>${escapeHtml(formatCount(profile.followers))}</strong>
+              </div>
+              <div class="partner-meta-item">
+                <span class="detail-label">XP</span>
+                <strong>${escapeHtml(formatCount(profile.xp))}</strong>
+              </div>
+            </div>
+            <div class="split-actions">
+              ${renderAction(profile)}
+              <button class="btn btn-outline btn-sm w-100" type="button" onclick="window.location.href='profile.html?user=${encodeURIComponent(profile.id)}'">Profile</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("resultsMeta").innerText = `${profiles.length} result${profiles.length === 1 ? "" : "s"}`;
+    }
+
+    async function searchProfiles() {
+      const query = document.getElementById("queryInput").value.trim();
+      const location = document.getElementById("locationInput").value.trim();
+      const style = document.getElementById("styleInput").value.trim();
+      const age = document.getElementById("ageInput").value.trim();
+      const budget = document.getElementById("budgetInput").value.trim();
+      const gender = document.getElementById("genderInput").value.trim();
+
+      let request = db
+        .from("profiles")
+        .select("*")
+        .neq("id", activeUser.id)
+        .order("created_at", { ascending: false });
+
+      if (query) {
+        request = request.or(`username.ilike.%${query}%,full_name.ilike.%${query}%,bio.ilike.%${query}%,tags.ilike.%${query}%`);
+      }
+
+      if (location) {
+        request = request.ilike("location", `%${location}%`);
+      }
+
+      if (style) {
+        request = request.ilike("style", `%${style}%`);
+      }
+
+      if (age) {
+        request = request.eq("age", Number(age));
+      }
+
+      if (budget) {
+        request = request.eq("budget", budget);
+      }
+
+      if (gender) {
+        request = request.eq("gender", gender);
+      }
+
+      const { data, error } = await request.limit(24);
+
+      if (error) {
+        console.error(error);
+        document.getElementById("partnerResults").innerHTML = '<div class="feed-empty">Could not load profiles right now.</div>';
+        return;
+      }
+
+      renderProfiles(data || []);
+    }
+
+    async function sendFriendRequest(receiverId) {
+      const duplicate = requestRows.find((row) =>
+        (row.sender_id === activeUser.id && row.receiver_id === receiverId) ||
+        (row.sender_id === receiverId && row.receiver_id === activeUser.id)
+      );
+
+      if (duplicate) {
+        alert("A friend request already exists for this explorer.");
+        return;
+      }
+
+      const { error } = await db
+        .from("friend_requests")
+        .insert({
+          sender_id: activeUser.id,
+          receiver_id: receiverId,
+          status: "pending"
+        });
+
+      if (error) {
+        console.error(error);
+        alert(error.message);
+        return;
+      }
+
+      await refreshPageData();
+    }
+
+    async function incrementFollowersForAcceptedRequest(request) {
+      const ids = [request.sender_id, request.receiver_id];
+      const { data, error } = await db
+        .from("profiles")
+        .select("id, followers")
+        .in("id", ids);
+
+      if (error || !data) {
+        console.error(error);
+        return;
+      }
+
+      for (const profile of data) {
+        await db
+          .from("profiles")
+          .update({ followers: Number(profile.followers || 0) + 1 })
+          .eq("id", profile.id);
+      }
+    }
+
+    async function respondToRequest(requestId, status) {
+      const request = requestRows.find((item) => item.id === requestId);
+      if (!request) return;
+
+      const { error } = await db
+        .from("friend_requests")
+        .update({ status })
+        .eq("id", requestId);
+
+      if (error) {
+        console.error(error);
+        alert(error.message);
+        return;
+      }
+
+      if (status === "accepted") {
+        await incrementFollowersForAcceptedRequest(request);
+      }
+
+      await refreshPageData();
+    }
+
+    async function refreshPageData() {
+      await fetchRequestRows();
+      await searchProfiles();
+    }
+
+    document.getElementById("searchForm")
+      .addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await searchProfiles();
+      });
+
+    async function initializePage() {
+      const profile = await loadActiveProfile();
+      if (!profile) return;
+
+      await refreshPageData();
+    }
+
+    initializePage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notifications - Huntmate</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">H</span>
+      <div>
+        <div class="brand-title">HUNTMATE.</div>
+        <div class="brand-subtitle">Adventure journal network</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-section-label">Explore</div>
+      <nav>
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="find-huntmate.html" class="nav-link">Find Partners</a>
+        <a href="treasure-hunt.html" class="nav-link">Treasure Hunts</a>
+        <a href="chat.html" class="nav-link">Messages</a>
+        <a href="notifications.html" class="nav-link active">Notifications</a>
+        <a href="profile.html" class="nav-link">Profile</a>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="shell-content">
+      <section class="page-hero">
+        <div class="flex-between">
+          <div>
+            <div class="eyebrow">Request center</div>
+            <h1 class="hero-title">Notifications</h1>
+            <p class="hero-copy">Handle incoming requests, keep track of accepted connections, and review what you have already sent.</p>
+          </div>
+          <span class="badge badge-primary" id="notificationCount">0 alerts</span>
+        </div>
+      </section>
+
+      <section class="card section-card" style="margin-top: 28px;">
+        <div id="notifications" class="stack"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const db = createSupabaseClient();
+let activeUser = null;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderEmptyState(targetId, message) {
+  document.getElementById(targetId).innerHTML = `
+    <div class="feed-empty">${message}</div>
+  `;
+}
+
+async function getUser() {
+  const { data:{ session } } = await db.auth.getSession();
+
+  if (!session) {
+    window.location.href = "login.html";
+    return null;
+  }
+
+  activeUser = session.user;
+  return session.user;
+}
+
+async function fetchRequestRows() {
+  const user = activeUser || await getUser();
+  if (!user) return [];
+
+  const { data, error } = await db
+    .from("friend_requests")
+    .select("*")
+    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    renderEmptyState("notifications", 'Create the "friend_requests" table to enable notifications.');
+    document.getElementById("notificationCount").innerText = "Setup needed";
+    return [];
+  }
+
+  return data || [];
+}
+
+async function getProfilesByIds(ids) {
+  if (!ids.length) return {};
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, full_name, username, avatar_url")
+    .in("id", ids);
+
+  if (error) {
+    console.error(error);
+    return {};
+  }
+
+  return Object.fromEntries((data || []).map((profile) => [profile.id, profile]));
+}
+
+async function incrementFollowersForAcceptedRequest(request) {
+  const ids = [request.sender_id, request.receiver_id];
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, followers")
+    .in("id", ids);
+
+  if (error || !data) {
+    console.error(error);
+    return;
+  }
+
+  for (const profile of data) {
+    await db
+      .from("profiles")
+      .update({ followers: Number(profile.followers || 0) + 1 })
+      .eq("id", profile.id);
+  }
+}
+
+async function respondToRequest(requestId, status) {
+  const requestRows = await fetchRequestRows();
+  const request = requestRows.find((item) => item.id === requestId);
+
+  if (!request) {
+    alert("Request not found.");
+    return;
+  }
+
+  const { error } = await db
+    .from("friend_requests")
+    .update({ status })
+    .eq("id", requestId);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  if (status === "accepted") {
+    await incrementFollowersForAcceptedRequest(request);
+  }
+
+  await loadNotifications();
+}
+
+async function loadNotifications() {
+  const notifications = document.getElementById("notifications");
+  const requestRows = await fetchRequestRows();
+
+  if (!requestRows.length) {
+    renderEmptyState("notifications", "No notifications yet. New friend requests will appear here.");
+    document.getElementById("notificationCount").innerText = "0 alerts";
+    return;
+  }
+
+  const otherUserIds = [...new Set(requestRows.map((row) =>
+    row.sender_id === activeUser.id ? row.receiver_id : row.sender_id
+  ))];
+  const profiles = await getProfilesByIds(otherUserIds);
+  const incoming = requestRows.filter((row) => row.receiver_id === activeUser.id);
+  const outgoing = requestRows.filter((row) => row.sender_id === activeUser.id);
+
+  const incomingHtml = incoming.map((row) => {
+    const profile = profiles[row.sender_id] || {};
+    const label = row.status === "pending" ? "sent you a friend request" : `request ${row.status}`;
+    const actions = row.status === "pending"
+      ? `
+        <div class="request-actions">
+          <button class="btn btn-primary btn-sm" onclick="respondToRequest('${row.id}', 'accepted')">Accept</button>
+          <button class="btn btn-outline btn-sm" onclick="respondToRequest('${row.id}', 'declined')">Decline</button>
+        </div>
+      `
+      : `<span class="badge badge-success">${escapeHtml(row.status)}</span>`;
+
+    return `
+      <div class="notification-item">
+        <div class="user-result-head">
+          <img src="${escapeHtml(profile.avatar_url || "https://i.pravatar.cc/120")}" class="avatar avatar-md">
+          <div>
+            <div class="post-username">@${escapeHtml(profile.username || "user")}</div>
+            <div class="text-muted">${escapeHtml(profile.full_name || "Explorer")} ${label}</div>
+          </div>
+        </div>
+        ${actions}
+      </div>
+    `;
+  }).join("");
+
+  const outgoingHtml = outgoing.map((row) => {
+    const profile = profiles[row.receiver_id] || {};
+
+    return `
+      <div class="notification-item">
+        <div class="user-result-head">
+          <img src="${escapeHtml(profile.avatar_url || "https://i.pravatar.cc/120")}" class="avatar avatar-md">
+          <div>
+            <div class="post-username">@${escapeHtml(profile.username || "user")}</div>
+            <div class="text-muted">You sent ${escapeHtml(profile.full_name || "this explorer")} a request.</div>
+          </div>
+        </div>
+        <span class="badge ${row.status === "accepted" ? "badge-success" : "badge-primary"}">${escapeHtml(row.status)}</span>
+      </div>
+    `;
+  }).join("");
+
+  notifications.innerHTML = `
+    <div class="notification-group">
+      <h4 class="section-heading">Incoming</h4>
+      ${incomingHtml || '<div class="feed-empty">No incoming requests right now.</div>'}
+    </div>
+    <div class="notification-group">
+      <h4 class="section-heading">Outgoing</h4>
+      ${outgoingHtml || '<div class="feed-empty">No outgoing requests yet.</div>'}
+    </div>
+  `;
+
+  const alertCount = incoming.filter((row) => row.status === "pending").length;
+  document.getElementById("notificationCount").innerText = `${alertCount} alert${alertCount === 1 ? "" : "s"}`;
+}
+
+async function initializeNotifications() {
+  const user = await getUser();
+  if (!user) return;
+
+  await loadNotifications();
+}
+
+initializeNotifications();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Treasure Hunts - Huntmate</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">H</span>
+        <div>
+          <div class="brand-title">HUNTMATE.</div>
+          <div class="brand-subtitle">Adventure journal network</div>
+        </div>
+      </div>
+      <div>
+        <div class="nav-section-label">Explore</div>
+        <nav>
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="find-huntmate.html" class="nav-link">Find Partners</a>
+          <a href="treasure-hunt.html" class="nav-link active">Treasure Hunts</a>
+          <a href="chat.html" class="nav-link">Messages</a>
+          <a href="notifications.html" class="nav-link">Notifications</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="shell-content">
+        <section class="page-hero">
+          <div class="flex-between">
+            <div>
+              <div class="eyebrow">Quest board</div>
+              <h1 class="hero-title">Official Quests</h1>
+              <p class="hero-copy">Solve clues, visit places, and unlock badges through travel-inspired missions designed to feel premium and playful.</p>
+            </div>
+            <select class="input" style="width:auto; min-width:220px;">
+              <option>Sort by: Difficulty</option>
+              <option>Sort by: Newest</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="grid grid-3" style="margin-top:28px;">
+          <article class="card hover-card">
+            <img src="https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80" class="hunt-img" alt="Jaipur">
+            <div class="flex-between mb-1">
+              <span class="badge badge-primary">Legacy Quest</span>
+              <span class="text-muted" style="font-size: 0.8rem;">Hard</span>
+            </div>
+            <h3>The Pink City Secret</h3>
+            <p class="text-muted mb-2">Jaipur, Rajasthan</p>
+            <ul class="quest-list">
+              <li>Find the hidden gate at Nahargarh.</li>
+              <li>Decode the inscription at Hawa Mahal.</li>
+              <li>Reward: Royal Explorer badge.</li>
+            </ul>
+            <button class="btn btn-primary w-100">Start Quest</button>
+          </article>
+
+          <article class="card hover-card">
+            <img src="https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80" class="hunt-img" alt="Goa">
+            <div class="flex-between mb-1">
+              <span class="badge badge-success">Time Capsule</span>
+              <span class="text-muted" style="font-size: 0.8rem;">Easy</span>
+            </div>
+            <h3>Coastal Whisper</h3>
+            <p class="text-muted mb-2">South Goa</p>
+            <ul class="quest-list">
+              <li>Locate the 300-year-old Portuguese villa.</li>
+              <li>Find the specific palm tree on Palolem beach.</li>
+              <li>Reward: Unlock hidden capsule.</li>
+            </ul>
+            <button class="btn btn-primary w-100">Start Quest</button>
+          </article>
+
+          <article class="card hover-card">
+            <img src="https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80" class="hunt-img" alt="Meghalaya">
+            <div class="flex-between mb-1">
+              <span class="badge badge-primary">Adventure</span>
+              <span class="text-muted" style="font-size: 0.8rem;">Moderate</span>
+            </div>
+            <h3>Roots of Time</h3>
+            <p class="text-muted mb-2">Cherrapunji, Meghalaya</p>
+            <ul class="quest-list">
+              <li>Trek to the double-decker root bridge.</li>
+              <li>Find the cave marker.</li>
+              <li>Reward: Nature Guardian badge.</li>
+            </ul>
+            <button class="btn btn-primary w-100">Start Quest</button>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

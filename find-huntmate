@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Find Huntmate • Search</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  
+  <div class="app-wrapper">
+    <!-- Sidebar (Same as index) -->
+    <aside class="sidebar">
+      <div class="brand"><span>🏴‍☠️</span> HUNTMATE.</div>
+      <nav>
+        <a href="index.html" class="nav-link">🏠 Home</a>
+        <a href="find-huntmate.html" class="nav-link active">🔍 Find Partners</a>
+        <a href="treasure-hunt.html" class="nav-link">🧭 Treasure Hunts</a>
+        <a href="chat.html" class="nav-link">💬 Messages</a>
+        <a href="profile.html" class="nav-link">👤 Profile</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-1">Find Your Squad 🤝</h2>
+      <p class="text-muted mb-2">Connect with travelers who match your vibe and budget.</p>
+
+      <!-- Filter Bar -->
+      <div class="card mb-2">
+        <form class="grid-4" onsubmit="event.preventDefault();">
+          <div>
+            <label class="text-muted" style="font-size: 0.85rem;">Region</label>
+            <select class="input">
+              <option>Any Location</option>
+              <option>North India</option>
+              <option>South India</option>
+              <option>North East</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-muted" style="font-size: 0.85rem;">Travel Style</label>
+            <select class="input">
+              <option>Backpacking</option>
+              <option>Luxury</option>
+              <option>Adventure</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-muted" style="font-size: 0.85rem;">Gender</label>
+            <select class="input">
+              <option>Any</option>
+              <option>Female</option>
+              <option>Male</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button class="btn btn-primary w-100">Search</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Results Grid -->
+      <div class="grid grid-3">
+        <!-- User 1 -->
+        <div class="card hover-card" style="text-align: center;">
+          <img src="https://i.pravatar.cc/150?u=44" class="avatar avatar-xl mb-1">
+          <h3>Ananya Iyer</h3>
+          <p class="text-muted mb-1">📍 Pune • Trekking Pro</p>
+          <div class="mb-2">
+            <span class="badge badge-primary">Mountains</span>
+            <span class="badge badge-primary">Budget</span>
+          </div>
+          <p class="mb-2" style="font-style: italic;">"Looking for a group for Kedarkantha trek in Dec!"</p>
+          <div class="grid-2" style="gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm w-100">Connect</button>
+            <button class="btn btn-outline btn-sm w-100" onclick="location.href='profile.html'">Profile</button>
+          </div>
+        </div>
+
+        <!-- User 2 -->
+        <div class="card hover-card" style="text-align: center;">
+          <img src="https://i.pravatar.cc/150?u=15" class="avatar avatar-xl mb-1">
+          <h3>Rahul Verma</h3>
+          <p class="text-muted mb-1">📍 Delhi • Biker</p>
+          <div class="mb-2">
+            <span class="badge badge-primary">Road Trips</span>
+            <span class="badge badge-primary">Camping</span>
+          </div>
+          <p class="mb-2" style="font-style: italic;">"Planning a Ladakh bike trip. Need a pillion/partner."</p>
+          <div class="grid-2" style="gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm w-100">Connect</button>
+            <button class="btn btn-outline btn-sm w-100" onclick="location.href='profile.html'">Profile</button>
+          </div>
+        </div>
+
+        <!-- User 3 -->
+        <div class="card hover-card" style="text-align: center;">
+          <img src="https://i.pravatar.cc/150?u=20" class="avatar avatar-xl mb-1">
+          <h3>Sarah J.</h3>
+          <p class="text-muted mb-1">📍 Goa • Photographer</p>
+          <div class="mb-2">
+            <span class="badge badge-primary">Beaches</span>
+            <span class="badge badge-primary">Culture</span>
+          </div>
+          <p class="mb-2" style="font-style: italic;">"Exploring heritage homes in South Goa."</p>
+          <div class="grid-2" style="gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm w-100">Connect</button>
+            <button class="btn btn-outline btn-sm w-100" onclick="location.href='profile.html'">Profile</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

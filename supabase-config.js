@@ -1,0 +1,2 @@
+window.HUNTMATE_SUPABASE_URL = "https://ahhmdmzltyadrulwfnva.supabase.co";
+window.HUNTMATE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1kbXpsdHlhZHJ1bHdmbnZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1MzA2NzUsImV4cCI6MjA4NjEwNjY3NX0.X15JQheEO7hXsBv9YVtKnDi8vIX24Mm0K2Jdr7e--Xo";

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Huntmate - Home</title>
+
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+</head>
+
+<body>
+
+<div class="app-wrapper">
+
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-mark">H</span>
+    <div>
+      <div class="brand-title">HUNTMATE.</div>
+      <div class="brand-subtitle">Adventure journal network</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="nav-section-label">Explore</div>
+    <nav>
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="find-huntmate.html" class="nav-link">Find Partners</a>
+      <a href="treasure-hunt.html" class="nav-link">Treasure Hunts</a>
+      <a href="chat.html" class="nav-link">Messages</a>
+      <a href="notifications.html" class="nav-link">Notifications</a>
+      <a href="profile.html" class="nav-link">Profile</a>
+    </nav>
+  </div>
+
+  <div class="sidebar-footer">
+    <p>Share the route, the idea, or the mood. The feed is your living campfire for new plans and recent stories.</p>
+  </div>
+</aside>
+
+<main class="main-content">
+  <div class="shell-content">
+    <section class="page-hero home-search-hero">
+      <form id="searchForm" class="search-shell">
+        <input
+        id="searchInput"
+        class="input search-input"
+        placeholder="Search explorers by username, name, location, or tags"
+        required>
+
+        <button class="btn btn-outline search-submit" type="submit">Search</button>
+      </form>
+
+      <div class="search-meta-row">
+        <span id="searchMeta">Find people fast and connect from one clean search.</span>
+      </div>
+
+      <div id="searchResults" class="stack" hidden></div>
+    </section>
+
+    <section class="dashboard-grid full-feed-layout">
+      <div class="stack">
+        <div class="card section-card">
+          <div class="flex-between mb-2">
+            <div>
+              <h2 class="section-heading">Share your latest adventure</h2>
+              <p class="section-subtitle">Keep the same posting logic, just wrapped in a calmer and more premium feed composer.</p>
+            </div>
+            <span class="badge badge-primary">Feed composer</span>
+          </div>
+
+          <form id="postForm" class="feed-composer">
+            <textarea
+            id="content"
+            class="input"
+            placeholder="Share your latest adventure..."
+            required></textarea>
+
+            <input
+            type="file"
+            id="postImage"
+            accept="image/*"
+            class="input">
+
+            <div class="feed-toolbar">
+              <span>Attach one image and publish instantly.</span>
+              <button class="btn btn-primary">Post</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="feed" class="stack"></div>
+      </div>
+    </section>
+  </div>
+</main>
+</div>
+
+<div id="shareSheet" class="share-sheet" aria-hidden="true">
+  <div class="card section-card share-sheet-card">
+    <div class="flex-between">
+      <div>
+        <h3 class="section-heading">Share Post In Messages</h3>
+        <p class="section-subtitle">Send this post to one of your accepted Huntmate connections.</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="closeShareSheet()">Close</button>
+    </div>
+
+    <div id="sharePostPreview" class="shared-post-preview"></div>
+    <div id="shareTargets" class="share-sheet-list"></div>
+
+    <div class="share-sheet-actions">
+      <button class="btn btn-outline" type="button" onclick="closeShareSheet()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const db = createSupabaseClient();
+let activeUser = null;
+let activeProfile = null;
+let acceptedConnections = [];
+let pendingSharePost = null;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatTags(rawTags) {
+  return (rawTags || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function renderEmptyState(targetId, message) {
+  document.getElementById(targetId).innerHTML = `
+    <div class="feed-empty">${message}</div>
+  `;
+}
+
+function setSearchResultsState({ html = "", hidden = false }) {
+  const results = document.getElementById("searchResults");
+  results.innerHTML = html;
+  results.hidden = hidden;
+}
+
+function formatRelativeTime(value) {
+  const date = value ? new Date(value) : new Date();
+  const diffMinutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60000));
+
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function getPostKey(post) {
+  return String(post.id || `${post.user_id || "guest"}-${post.created_at || post.content || "post"}`);
+}
+
+function buildConversationId(firstId, secondId) {
+  return [firstId, secondId].sort().join("::");
+}
+
+function getViewerUsername() {
+  return activeProfile?.username || activeProfile?.full_name || activeUser?.email || "user";
+}
+
+function createSharedPostCard(post) {
+  return `
+    <div class="shared-post-card">
+      <div class="shared-post-header">
+        <strong>@${escapeHtml(post.username || "user")}</strong>
+        <span class="text-muted">${escapeHtml(post.createdLabel || "Shared from the feed")}</span>
+      </div>
+      <div>${escapeHtml(post.content || "Shared a post")}</div>
+      ${post.image_url ? `<img src="${escapeHtml(post.image_url)}" alt="Shared post image">` : ""}
+    </div>
+  `;
+}
+
+async function getUser() {
+  const { data:{ session } } = await db.auth.getSession();
+
+  if (!session) {
+    window.location.href = "login.html";
+    return null;
+  }
+
+  return session.user;
+}
+
+async function loadActiveProfile() {
+  const user = await getUser();
+  if (!user) return null;
+
+  activeUser = user;
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  activeProfile = data;
+  return data;
+}
+
+async function loadFeedInteractions(posts) {
+  if (!posts.length) {
+    return { reactionsByPost: {}, commentsByPost: {} };
+  }
+
+  const postIds = posts.map((post) => post.id).filter(Boolean);
+  const [{ data: reactions, error: reactionsError }, { data: comments, error: commentsError }] = await Promise.all([
+    db
+      .from("post_reactions")
+      .select("post_id, user_id, reaction_type")
+      .in("post_id", postIds),
+    db
+      .from("post_comments")
+      .select("id, post_id, user_id, comment, created_at")
+      .in("post_id", postIds)
+      .order("created_at", { ascending: true })
+  ]);
+
+  if (reactionsError || commentsError) {
+    console.error(reactionsError || commentsError);
+    return null;
+  }
+
+  const commenterIds = [...new Set((comments || []).map((comment) => comment.user_id).filter(Boolean))];
+  const commenterProfiles = await getProfilesByIds(commenterIds);
+  const reactionsByPost = {};
+  const commentsByPost = {};
+
+  for (const reaction of reactions || []) {
+    const postId = String(reaction.post_id);
+    if (!reactionsByPost[postId]) {
+      reactionsByPost[postId] = { likes: [], dislikes: [] };
+    }
+
+    if (reaction.reaction_type === "like") {
+      reactionsByPost[postId].likes.push(reaction.user_id);
+    }
+
+    if (reaction.reaction_type === "dislike") {
+      reactionsByPost[postId].dislikes.push(reaction.user_id);
+    }
+  }
+
+  for (const comment of comments || []) {
+    const postId = String(comment.post_id);
+    if (!commentsByPost[postId]) {
+      commentsByPost[postId] = [];
+    }
+
+    const profile = commenterProfiles[comment.user_id] || {};
+    commentsByPost[postId].push({
+      id: comment.id,
+      userId: comment.user_id,
+      username: profile.username || profile.full_name || "user",
+      text: comment.comment || "",
+      createdAt: comment.created_at
+    });
+  }
+
+  return { reactionsByPost, commentsByPost };
+}
+
+function renderCommentList(commentItems) {
+  if (!commentItems.length) {
+    return "";
+  }
+
+  return commentItems
+    .map((comment) => `
+      <div class="comment-item">
+        <div class="comment-header">
+          <strong>@${escapeHtml(comment.username || "user")}</strong>
+          <span>${escapeHtml(formatRelativeTime(comment.createdAt))}</span>
+        </div>
+        <div>${escapeHtml(comment.text)}</div>
+      </div>
+    `)
+    .join("");
+}
+
+async function fetchSinglePostInteraction(postId) {
+  const [reactionResult, commentResult] = await Promise.all([
+    db
+      .from("post_reactions")
+      .select("user_id, reaction_type")
+      .eq("post_id", postId),
+    db
+      .from("post_comments")
+      .select("id, user_id, comment, created_at")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true })
+  ]);
+
+  if (reactionResult.error || commentResult.error) {
+    console.error(reactionResult.error || commentResult.error);
+    return null;
+  }
+
+  const reactions = reactionResult.data || [];
+  const comments = commentResult.data || [];
+  const commenterIds = [...new Set(comments.map((comment) => comment.user_id).filter(Boolean))];
+  const commenterProfiles = await getProfilesByIds(commenterIds);
+
+  return {
+    likes: reactions.filter((item) => item.reaction_type === "like").map((item) => item.user_id),
+    dislikes: reactions.filter((item) => item.reaction_type === "dislike").map((item) => item.user_id),
+    comments: comments.map((comment) => {
+      const profile = commenterProfiles[comment.user_id] || {};
+      return {
+        id: comment.id,
+        userId: comment.user_id,
+        username: profile.username || profile.full_name || "user",
+        text: comment.comment || "",
+        createdAt: comment.created_at
+      };
+    })
+  };
+}
+
+async function refreshPostInteractions(postId) {
+  const interactions = await fetchSinglePostInteraction(postId);
+  if (!interactions) {
+    return;
+  }
+
+  const likeButton = document.getElementById(`like-btn-${postId}`);
+  const dislikeButton = document.getElementById(`dislike-btn-${postId}`);
+  const likeCount = document.getElementById(`like-count-${postId}`);
+  const dislikeCount = document.getElementById(`dislike-count-${postId}`);
+  const commentCount = document.getElementById(`comment-count-${postId}`);
+  const commentList = document.getElementById(`comment-list-${postId}`);
+
+  if (likeButton) {
+    likeButton.classList.toggle("is-active", interactions.likes.includes(activeUser.id));
+  }
+
+  if (dislikeButton) {
+    dislikeButton.classList.toggle("is-active", interactions.dislikes.includes(activeUser.id));
+  }
+
+  if (likeCount) {
+    likeCount.innerText = interactions.likes.length;
+  }
+
+  if (dislikeCount) {
+    dislikeCount.innerText = interactions.dislikes.length;
+  }
+
+  if (commentCount) {
+    commentCount.innerText = interactions.comments.length;
+  }
+
+  if (commentList) {
+    commentList.innerHTML = renderCommentList(interactions.comments);
+  }
+}
+
+async function loadFeed() {
+  const { data: posts, error } = await db
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  if (!posts || posts.length === 0) {
+    feed.innerHTML = '<div class="feed-empty">No stories yet. Be the first explorer to post an update.</div>';
+    return;
+  }
+
+  const interactionData = await loadFeedInteractions(posts);
+  if (interactionData === null) {
+    feed.innerHTML = '<div class="feed-empty">Create the post reaction and comment tables to enable likes, dislikes, and comments.</div>';
+    return;
+  }
+
+  const { reactionsByPost, commentsByPost } = interactionData;
+
+  for (const post of posts) {
+    let username = "user";
+    let avatar = "https://i.pravatar.cc/100";
+
+    if (post.user_id) {
+      const { data: profile } = await db
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", post.user_id)
+        .single();
+
+      if (profile) {
+        username = profile.username || username;
+        avatar = profile.avatar_url || avatar;
+      }
+    }
+
+    const postKey = getPostKey(post);
+    const postDomId = encodeURIComponent(postKey);
+    const interactions = reactionsByPost[String(post.id)] || { likes: [], dislikes: [] };
+    const comments = commentsByPost[String(post.id)] || [];
+    const viewerLiked = interactions.likes.includes(activeUser.id);
+    const viewerDisliked = interactions.dislikes.includes(activeUser.id);
+    const commentHtml = renderCommentList(comments);
+
+    const postSnapshot = {
+      id: postKey,
+      username,
+      content: post.content || "",
+      image_url: post.image_url || "",
+      createdLabel: formatRelativeTime(post.created_at),
+      authorId: post.user_id || ""
+    };
+    const sharePayload = encodeURIComponent(JSON.stringify(postSnapshot));
+    const profileHref = `profile.html?user=${encodeURIComponent(post.user_id || "")}`;
+
+    feed.innerHTML += `
+      <div class="card post-card hover-card" data-post-id="${post.id}">
+        <div class="post-header">
+          <a href="${profileHref}" aria-label="Open @${escapeHtml(username)} profile">
+            <img src="${escapeHtml(avatar)}" class="avatar avatar-md">
+          </a>
+          <div class="post-header-copy">
+            <a href="${profileHref}" class="post-username-link">@${escapeHtml(username)}</a>
+            <div class="text-muted">Fresh from the Huntmate feed</div>
+          </div>
+        </div>
+
+        <div class="post-content">${escapeHtml(post.content || "")}</div>
+
+        ${post.image_url ? `<img src="${escapeHtml(post.image_url)}" class="post-image" alt="Post image">` : ""}
+
+        <div class="post-actions">
+          <div class="post-action-row">
+            <div class="post-action-buttons">
+              <div class="post-action-item">
+                <button id="like-btn-${post.id}" class="btn btn-sm action-btn ${viewerLiked ? "is-active" : ""}" type="button" onclick="toggleReaction('${postDomId}', 'like')" aria-label="Like post" title="Like post">&#10084;</button>
+                <span id="like-count-${post.id}" class="post-action-count">${interactions.likes.length}</span>
+              </div>
+              <div class="post-action-item">
+                <button id="dislike-btn-${post.id}" class="btn btn-sm action-btn ${viewerDisliked ? "is-active" : ""}" type="button" onclick="toggleReaction('${postDomId}', 'dislike')" aria-label="Dislike post" title="Dislike post">&#128078;</button>
+                <span id="dislike-count-${post.id}" class="post-action-count">${interactions.dislikes.length}</span>
+              </div>
+              <div class="post-action-item">
+                <button class="btn btn-sm action-btn" type="button" onclick="toggleComments('${postDomId}')" aria-label="Comment on post" title="Comment on post">&#128172;</button>
+                <span id="comment-count-${post.id}" class="post-action-count">${comments.length}</span>
+              </div>
+              <div class="post-action-item">
+                <button class="btn btn-sm action-btn" type="button" onclick="openShareSheet('${sharePayload}')" aria-label="Share post" title="Share post">&#10150;</button>
+                <span class="post-action-count"> </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="post-meta-row" id="comments-${postDomId}" hidden>
+            <div id="comment-list-${post.id}" class="comment-list">${commentHtml}</div>
+
+            <form class="comment-form" onsubmit="submitComment(event, '${postDomId}')">
+              <textarea id="comment-input-${postDomId}" class="input" placeholder="Write a comment..."></textarea>
+              <button class="btn btn-primary btn-sm" type="submit">Post Comment</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+}
+
+function toggleComments(postKey) {
+  const panel = document.getElementById(`comments-${postKey}`);
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+}
+
+async function toggleReaction(postKey, type) {
+  postKey = decodeURIComponent(postKey);
+  if (!activeUser?.id) return;
+
+  const postId = Number(postKey);
+  if (!postId) return;
+
+  const { data: existing, error: existingError } = await db
+    .from("post_reactions")
+    .select("id, reaction_type")
+    .eq("post_id", postId)
+    .eq("user_id", activeUser.id)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error(existingError);
+    alert(existingError.message);
+    return;
+  }
+
+  if (existing && existing.reaction_type === type) {
+    const { error } = await db
+      .from("post_reactions")
+      .delete()
+      .eq("id", existing.id);
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+  } else if (existing) {
+    const { error } = await db
+      .from("post_reactions")
+      .update({ reaction_type: type })
+      .eq("id", existing.id);
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+  } else {
+    const { error } = await db
+      .from("post_reactions")
+      .insert({
+        post_id: postId,
+        user_id: activeUser.id,
+        reaction_type: type
+      });
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+  }
+
+  await refreshPostInteractions(postId);
+}
+
+async function submitComment(event, postKey) {
+  event.preventDefault();
+  postKey = decodeURIComponent(postKey);
+  const postDomId = encodeURIComponent(postKey);
+  const input = document.getElementById(`comment-input-${postDomId}`);
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  const postId = Number(postKey);
+  if (!postId) return;
+
+  const { error } = await db
+    .from("post_comments")
+    .insert({
+      post_id: postId,
+      user_id: activeUser.id,
+      comment: text
+    });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  input.value = "";
+  await refreshPostInteractions(postId);
+  const panel = document.getElementById(`comments-${postDomId}`);
+  if (panel) panel.hidden = false;
+}
+
+async function loadAcceptedConnections() {
+  const requestRows = await fetchRequestRows();
+  const acceptedRows = requestRows.filter((row) => row.status === "accepted");
+  const ids = [...new Set(acceptedRows.map((row) =>
+    row.sender_id === activeUser.id ? row.receiver_id : row.sender_id
+  ))];
+
+  const profiles = await getProfilesByIds(ids);
+  acceptedConnections = ids
+    .map((id) => profiles[id])
+    .filter(Boolean);
+
+  return acceptedConnections;
+}
+
+function closeShareSheet() {
+  pendingSharePost = null;
+  const sheet = document.getElementById("shareSheet");
+  sheet.classList.remove("is-open");
+  sheet.setAttribute("aria-hidden", "true");
+}
+
+async function openShareSheet(postJson) {
+  pendingSharePost = JSON.parse(decodeURIComponent(postJson));
+
+  if (!acceptedConnections.length) {
+    await loadAcceptedConnections();
+  }
+
+  if (!acceptedConnections.length) {
+    alert("Accept a friend request first, then you can share posts in messages.");
+    return;
+  }
+
+  document.getElementById("sharePostPreview").innerHTML = createSharedPostCard(pendingSharePost);
+
+  document.getElementById("shareTargets").innerHTML = acceptedConnections.map((profile) => `
+    <div class="share-target-card">
+      <div class="share-target-head">
+        <div class="user-result-head">
+          <img src="${escapeHtml(profile.avatar_url || "https://i.pravatar.cc/120")}" class="avatar avatar-md">
+          <div>
+            <div class="post-username">${escapeHtml(profile.full_name || profile.username || "Explorer")}</div>
+            <div class="text-muted">@${escapeHtml(profile.username || "user")}</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" onclick="sharePostToUser('${profile.id}')">Send</button>
+      </div>
+      <div class="text-muted">${escapeHtml(profile.location || "Ready to explore")}</div>
+    </div>
+  `).join("");
+
+  const sheet = document.getElementById("shareSheet");
+  sheet.classList.add("is-open");
+  sheet.setAttribute("aria-hidden", "false");
+}
+
+async function sharePostToUser(receiverId) {
+  if (!pendingSharePost || !activeUser?.id) return;
+
+  const { error } = await db
+    .from("messages")
+    .insert({
+      conversation_id: buildConversationId(activeUser.id, receiverId),
+      sender_id: activeUser.id,
+      receiver_id: receiverId,
+      sender: getViewerUsername(),
+      message: "Shared a post from the Huntmate feed.",
+      type: "shared_post",
+      post_json: pendingSharePost
+    });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  closeShareSheet();
+  window.location.href = `chat.html?user=${encodeURIComponent(receiverId)}`;
+}
+
+async function fetchRequestRows() {
+  const user = activeUser || await getUser();
+  if (!user) return [];
+
+  const { data, error } = await db
+    .from("friend_requests")
+    .select("*")
+    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function getProfilesByIds(ids) {
+  if (!ids.length) return {};
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, full_name, username, avatar_url, location, style, tags")
+    .in("id", ids);
+
+  if (error) {
+    console.error(error);
+    return {};
+  }
+
+  return Object.fromEntries((data || []).map((profile) => [profile.id, profile]));
+}
+
+function getRequestStatusForUser(requests, userId) {
+  const request = requests.find((item) =>
+    item.sender_id === userId || item.receiver_id === userId
+  );
+
+  return request || null;
+}
+
+async function searchUsers(query) {
+  const trimmed = query.trim();
+  const results = document.getElementById("searchResults");
+  const meta = document.getElementById("searchMeta");
+
+  if (!trimmed) {
+    setSearchResultsState({ hidden: true });
+    meta.innerText = "Find people fast and connect from one clean search.";
+    return;
+  }
+
+  meta.innerText = `Searching for "${trimmed}"...`;
+
+  const requestRows = await fetchRequestRows();
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, full_name, username, avatar_url, location, style, tags")
+    .or(`username.ilike.%${trimmed}%,full_name.ilike.%${trimmed}%,location.ilike.%${trimmed}%,tags.ilike.%${trimmed}%`)
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (error) {
+    console.error(error);
+    setSearchResultsState({
+      html: '<div class="feed-empty">Search could not run right now.</div>',
+      hidden: false
+    });
+    meta.innerText = "Search unavailable";
+    return;
+  }
+
+  const profiles = (data || []).filter((profile) => profile.id !== activeUser.id);
+
+  if (profiles.length === 0) {
+    setSearchResultsState({
+      html: '<div class="feed-empty">No explorers matched your search yet.</div>',
+      hidden: false
+    });
+    meta.innerText = "0 results";
+    return;
+  }
+
+  results.innerHTML = profiles.map((profile) => {
+    const request = getRequestStatusForUser(requestRows, profile.id);
+    const tags = formatTags(profile.tags);
+    const isIncomingPending = request && request.status === "pending" && request.receiver_id === activeUser.id;
+    const isOutgoingPending = request && request.status === "pending" && request.sender_id === activeUser.id;
+    const isFriend = request && request.status === "accepted";
+
+    let actionHtml = `<button class="btn btn-primary btn-sm" onclick="sendFriendRequest('${profile.id}')">Send request</button>`;
+
+    if (isIncomingPending) {
+      actionHtml = `
+        <div class="request-actions">
+          <button class="btn btn-primary btn-sm" onclick="respondToRequest('${request.id}', 'accepted')">Accept</button>
+          <button class="btn btn-outline btn-sm" onclick="respondToRequest('${request.id}', 'declined')">Decline</button>
+        </div>
+      `;
+    } else if (isOutgoingPending) {
+      actionHtml = `<button class="btn btn-outline btn-sm" disabled>Request sent</button>`;
+    } else if (isFriend) {
+      actionHtml = `<button class="btn btn-outline btn-sm" disabled>Friends</button>`;
+    }
+
+    return `
+      <div class="card hover-card user-result-card">
+        <div class="user-result-head">
+          <img src="${escapeHtml(profile.avatar_url || "https://i.pravatar.cc/120")}" class="avatar avatar-md">
+          <div>
+            <div class="post-username">${escapeHtml(profile.full_name || "New explorer")}</div>
+            <div class="text-muted">@${escapeHtml(profile.username || "user")}</div>
+          </div>
+        </div>
+
+        <div class="user-result-copy">
+          <span>${escapeHtml(profile.location || "Location not added")}</span>
+          <span>${escapeHtml(profile.style || "Style not added")}</span>
+        </div>
+
+        <div class="hero-meta user-tag-row">
+          ${tags.length ? tags.map((tag) => `<span class="hero-chip">${escapeHtml(tag)}</span>`).join("") : '<span class="hero-chip">Open to connect</span>'}
+        </div>
+
+        ${actionHtml}
+      </div>
+    `;
+  }).join("");
+  results.hidden = false;
+
+  meta.innerText = `${profiles.length} result${profiles.length === 1 ? "" : "s"}`;
+}
+
+async function sendFriendRequest(receiverId) {
+  const existingRows = await fetchRequestRows();
+  const duplicate = existingRows.find((row) =>
+    (row.sender_id === activeUser.id && row.receiver_id === receiverId) ||
+    (row.sender_id === receiverId && row.receiver_id === activeUser.id)
+  );
+
+  if (duplicate) {
+    alert("A friend request already exists for this explorer.");
+    return;
+  }
+
+  const { error } = await db
+    .from("friend_requests")
+    .insert({
+      sender_id: activeUser.id,
+      receiver_id: receiverId,
+      status: "pending"
+    });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  alert("Friend request sent.");
+  await refreshSocialPanels();
+}
+
+async function incrementFollowersForAcceptedRequest(request) {
+  const ids = [request.sender_id, request.receiver_id];
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, followers")
+    .in("id", ids);
+
+  if (error || !data) {
+    console.error(error);
+    return;
+  }
+
+  for (const profile of data) {
+    await db
+      .from("profiles")
+      .update({ followers: Number(profile.followers || 0) + 1 })
+      .eq("id", profile.id);
+  }
+}
+
+async function respondToRequest(requestId, status) {
+  const requestRows = await fetchRequestRows();
+  const request = requestRows.find((item) => item.id === requestId);
+
+  if (!request) {
+    alert("Request not found.");
+    return;
+  }
+
+  const { error } = await db
+    .from("friend_requests")
+    .update({ status })
+    .eq("id", requestId);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  if (status === "accepted") {
+    await incrementFollowersForAcceptedRequest(request);
+  }
+
+  await refreshSocialPanels();
+}
+
+async function refreshSocialPanels() {
+  await loadAcceptedConnections();
+
+  const query = document.getElementById("searchInput").value.trim();
+  if (query) {
+    await searchUsers(query);
+  } else {
+    setSearchResultsState({ hidden: true });
+    document.getElementById("searchMeta").innerText = "Find people fast and connect from one clean search.";
+  }
+}
+
+document.getElementById("postForm")
+.addEventListener("submit", async e => {
+
+  e.preventDefault();
+
+  const user = await getUser();
+  if (!user) return;
+
+  let imageUrl = null;
+  const file = document.getElementById("postImage").files[0];
+
+  if (file) {
+    const fileName = `${user.id}-${Date.now()}`;
+
+    const { error } = await db.storage
+      .from("posts")
+      .upload(fileName, file, { upsert:true });
+
+    if (!error) {
+      const { data } =
+        db.storage.from("posts").getPublicUrl(fileName);
+
+      imageUrl = data.publicUrl;
+    }
+  }
+
+  const { error } = await db
+    .from("posts")
+    .insert({
+      user_id: user.id,
+      content: document.getElementById("content").value,
+      image_url: imageUrl
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  document.getElementById("postForm").reset();
+  loadFeed();
+});
+
+document.getElementById("searchForm")
+.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await searchUsers(document.getElementById("searchInput").value);
+});
+
+async function initializeHome() {
+  const profile = await loadActiveProfile();
+
+  if (!profile) {
+    setSearchResultsState({
+      html: '<div class="feed-empty">Complete your profile to start connecting with explorers.</div>',
+      hidden: false
+    });
+    return;
+  }
+
+  await Promise.all([
+    loadFeed(),
+    refreshSocialPanels()
+  ]);
+}
+
+initializeHome();
+
+</script>
+
+</body>
+</html>

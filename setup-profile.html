@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Setup Profile - Huntmate</title>
+
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+</head>
+
+<body>
+
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">H</span>
+      <div>
+        <div class="brand-title">HUNTMATE.</div>
+        <div class="brand-subtitle">Profile onboarding</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-section-label">Current step</div>
+      <a class="nav-link active">Setup Profile</a>
+    </div>
+
+    <div class="sidebar-footer">
+      <p>Complete your travel card once, then carry it into the feed, profile view, and partner search.</p>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="shell-content">
+      <section class="page-hero">
+        <div class="eyebrow">Explorer onboarding</div>
+        <h1 class="hero-title">Shape the first impression other travelers will remember.</h1>
+        <p class="hero-copy">Keep it personal and specific. Your profile becomes the center point for your posts, partner discovery, and public presence.</p>
+      </section>
+
+      <section class="onboarding-layout">
+        <div class="card section-card">
+          <h2 class="section-heading">Complete Your Profile</h2>
+          <p class="section-subtitle">This information appears on your public profile and helps other travelers understand your style.</p>
+
+          <form id="profileForm">
+            <label for="avatarFile">Avatar Image</label>
+            <input type="file" id="avatarFile" accept="image/*" class="input mb-2">
+
+            <div class="grid grid-2">
+              <div>
+                <label for="full_name">Name</label>
+                <input id="full_name" class="input mb-2" placeholder="Prince Varma">
+              </div>
+
+              <div>
+                <label for="username">Username</label>
+                <input id="username" class="input mb-2" placeholder="@prince_k.s" required>
+              </div>
+            </div>
+
+            <label for="bio">Bio</label>
+            <textarea id="bio" class="input mb-2" placeholder="Tell your story..."></textarea>
+
+            <div class="grid grid-2">
+              <div>
+                <label for="location">Location</label>
+                <input id="location" class="input mb-2" placeholder="Gujarat">
+              </div>
+
+              <div>
+                <label for="style">Travel Style</label>
+                <input id="style" class="input mb-2" placeholder="Budget / Heritage">
+              </div>
+            </div>
+
+            <div class="grid grid-3">
+              <div>
+                <label for="age">Age</label>
+                <input id="age" type="number" min="18" class="input mb-2" placeholder="24">
+              </div>
+
+              <div>
+                <label for="budget">Budget</label>
+                <select id="budget" class="input mb-2">
+                  <option value="">Select budget</option>
+                  <option value="Budget">Budget</option>
+                  <option value="Mid-range">Mid-range</option>
+                  <option value="Luxury">Luxury</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="gender">Gender</label>
+                <select id="gender" class="input mb-2">
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="tags">Tags</label>
+            <input id="tags" class="input mb-2" placeholder="Trekking, Backpacking, Culture">
+
+            <p class="text-muted mb-2">Followers, hunts, and XP are tracked automatically as people interact with your profile and activity.</p>
+
+            <button class="btn btn-primary w-100">
+              Save and Enter Huntmate
+            </button>
+          </form>
+        </div>
+
+        <div class="stack">
+          <div class="card section-card">
+            <div class="eyebrow">Why this matters</div>
+            <h2 class="section-heading">Profiles help the right people find you faster.</h2>
+            <div class="feature-list">
+              <div class="feature-item">
+                <strong>Travel personality</strong>
+                <span class="text-muted">Share whether you love culture, budget routes, trekking, bikes, or slower heritage stays.</span>
+              </div>
+              <div class="feature-item">
+                <strong>Stronger trust</strong>
+                <span class="text-muted">A complete profile makes connection requests feel more real and less random.</span>
+              </div>
+              <div class="feature-item">
+                <strong>Better discovery</strong>
+                <span class="text-muted">Your location and style give future search and matching features something useful to work with.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <span class="badge badge-success">Preview mood</span>
+            <h3 class="section-heading" style="margin-top:14px;">Curated, warm, and road-ready.</h3>
+            <p class="text-muted">The refreshed interface is designed to feel like a premium travel journal instead of a generic social dashboard.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+
+function createSupabaseClient() {
+  const url = window.HUNTMATE_SUPABASE_URL;
+  const anonKey = window.HUNTMATE_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey || anonKey === "PASTE_YOUR_SUPABASE_ANON_KEY_HERE") {
+    throw new Error('Supabase is not configured. Set your project URL and anon key in "supabase-config.js".');
+  }
+
+  return supabase.createClient(url, anonKey);
+}
+
+const supabaseClient = createSupabaseClient();
+
+async function checkUser() {
+  const { data:{session} } =
+    await supabaseClient.auth.getSession();
+
+  if (!session) {
+    window.location.href = "login.html";
+  }
+}
+
+checkUser();
+
+document.getElementById("profileForm")
+.addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  const { data:{session} } =
+    await supabaseClient.auth.getSession();
+
+  console.log("SESSION:", session);
+
+  let avatarUrl = null;
+
+  const file =
+    document.getElementById("avatarFile").files[0];
+
+  if (file) {
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } =
+    await supabaseClient.storage
+      .from("avatars")
+      .upload(fileName, file);
+
+ if (uploadError) {
+  console.error("UPLOAD ERROR:", uploadError);
+  alert(uploadError.message);
+  return;
+  }
+
+  const { data } =
+    supabaseClient.storage
+      .from("avatars")
+      .getPublicUrl(fileName);
+
+  avatarUrl = data.publicUrl;
+}
+
+
+  const profileData = {
+  full_name: document.getElementById("full_name").value,
+  username: document.getElementById("username").value,
+  bio: document.getElementById("bio").value,
+  location: document.getElementById("location").value,
+  style: document.getElementById("style").value,
+  age: document.getElementById("age").value ? Number(document.getElementById("age").value) : null,
+  budget: document.getElementById("budget").value,
+  gender: document.getElementById("gender").value,
+  tags: document.getElementById("tags").value,
+  avatar_url: avatarUrl
+};
+
+const { error } =
+  await supabaseClient
+    .from("profiles")
+    .upsert({
+      id: session.user.id,
+      ...profileData
+    });
+
+if (error) {
+  alert(error.message);
+  return;
+}
+
+window.location.href = "index.html";
+
+
+});
+
+</script>
+
+</body>
+</html>
