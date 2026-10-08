@@ -1,0 +1,8 @@
+<resources>
+    <color name="huntmate_primary">#1B4965</color>
+    <color name="huntmate_secondary">#5FA8D3</color>
+    <color name="huntmate_tertiary">#CAE9FF</color>
+    <color name="huntmate_background">#F7FBFC</color>
+    <color name="huntmate_surface">#FFFFFF</color>
+    <color name="huntmate_text">#102A43</color>
+</resources>

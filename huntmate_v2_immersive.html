@@ -1,0 +1,621 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:transparent}
+
+.nav-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:0 2px}
+.ntab{padding:7px 14px;border-radius:20px;font-size:11px;font-weight:500;border:0.5px solid rgba(0,0,0,0.12);background:#fff;color:#555;cursor:pointer;transition:all 0.15s}
+.ntab.on{background:#0D1B2A;color:#fff;border-color:#0D1B2A}
+
+.phone{width:340px;margin:0 auto;border-radius:36px;overflow:hidden;border:1px solid rgba(0,0,0,0.15);background:#0D1B2A;display:flex;flex-direction:column;min-height:660px}
+.screen{display:none;flex-direction:column;flex:1;min-height:660px}
+.screen.on{display:flex}
+
+/* ── SHARED ── */
+.scrollable{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:500}
+.chip-amber{background:#FFF3DC;color:#92570A}
+.chip-teal{background:#D4F5EC;color:#0A6B50}
+.chip-coral{background:#FFE8E4;color:#8B2A18}
+.chip-slate{background:rgba(255,255,255,0.15);color:#fff}
+
+/* ── STATUS BAR ── */
+.sbar{background:#0D1B2A;display:flex;justify-content:space-between;align-items:center;padding:10px 18px 6px;flex-shrink:0}
+.sbar-time{font-size:11px;font-weight:500;color:#fff}
+.sbar-icons{display:flex;gap:5px;align-items:center}
+.sbar-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.6)}
+
+/* ── TOP CHROME ── */
+.topchrome{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 12px;background:#0D1B2A;flex-shrink:0}
+.logo-mark{font-size:15px;font-weight:500;color:#F5A623;letter-spacing:0.5px}
+.ic-row{display:flex;gap:10px;align-items:center}
+.ic{width:32px;height:32px;border-radius:50%;border:0.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ic svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.notif-badge{position:relative}
+.notif-badge::after{content:'2';position:absolute;top:-2px;right:-2px;background:#F5A623;color:#0D1B2A;border-radius:10px;font-size:8px;font-weight:500;padding:1px 4px}
+
+/* ── BOTTOM NAV ── */
+.bnav{background:#fff;display:flex;align-items:center;padding:8px 4px 12px;flex-shrink:0;border-top:0.5px solid rgba(0,0,0,0.08)}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.bni svg{width:20px;height:20px;fill:none;stroke:#B0BAC9;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.bni.on svg{stroke:#0D1B2A}
+.bni-lbl{font-size:9px;color:#B0BAC9;font-weight:500}
+.bni.on .bni-lbl{color:#0D1B2A}
+.bni-fab{width:48px;height:48px;border-radius:50%;background:#F5A623;display:flex;align-items:center;justify-content:center;margin-top:-18px;box-shadow:0 4px 16px rgba(245,166,35,0.45)}
+.bni-fab svg{stroke:#fff;width:22px;height:22px}
+
+/* ──────────────────────────────
+   AUTH
+────────────────────────────── */
+.auth-bg{flex:1;background:#0D1B2A;position:relative;overflow:hidden}
+.auth-geo-1{position:absolute;width:220px;height:220px;border-radius:50%;background:#1A3A52;top:-60px;right:-60px}
+.auth-geo-2{position:absolute;width:140px;height:140px;border-radius:50%;background:#F5A62322;bottom:100px;left:-40px}
+.auth-geo-3{position:absolute;width:80px;height:80px;border-radius:50%;background:#F5A62315;top:100px;left:30px}
+.auth-content{position:relative;z-index:2;padding:28px 20px 0}
+.auth-wordmark{display:inline-flex;align-items:center;gap:8px;background:rgba(245,166,35,0.15);border:0.5px solid rgba(245,166,35,0.4);border-radius:20px;padding:6px 14px;margin-bottom:24px}
+.auth-wm-dot{width:8px;height:8px;border-radius:50%;background:#F5A623}
+.auth-wm-txt{font-size:13px;font-weight:500;color:#F5A623}
+.auth-h1{font-size:26px;font-weight:500;color:#fff;line-height:1.2;margin-bottom:10px}
+.auth-h1 em{color:#F5A623;font-style:normal}
+.auth-sub{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px}
+.auth-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+.auth-pill{background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 12px;font-size:10px;color:rgba(255,255,255,0.75)}
+.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:22px 20px 24px}
+.seg{display:flex;background:#F2F4F7;border-radius:12px;padding:3px;margin-bottom:18px}
+.seg-o{flex:1;text-align:center;padding:8px;border-radius:10px;font-size:12px;font-weight:500;color:#8A96A8;cursor:pointer}
+.seg-o.on{background:#0D1B2A;color:#fff}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;font-weight:500;color:#8A96A8;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px}
+.field-box{background:#F8FAFB;border:0.5px solid #E3E8EF;border-radius:12px;padding:12px 14px;font-size:13px;color:#0D1B2A}
+.field-box.pw{letter-spacing:5px;font-size:16px;color:#0D1B2A}
+.btn-main{width:100%;background:#0D1B2A;color:#fff;border-radius:14px;padding:14px;font-size:14px;font-weight:500;border:none;cursor:pointer;margin-top:4px}
+.btn-sub{text-align:center;font-size:11px;color:#8A96A8;margin-top:12px}
+.btn-sub span{color:#0D1B2A;font-weight:500;cursor:pointer}
+
+/* ──────────────────────────────
+   FEED
+────────────────────────────── */
+.feed-wrap{background:#F4F6FA}
+.feed-filters{display:flex;gap:8px;padding:12px 14px 10px;overflow-x:auto;background:#0D1B2A}
+.fchip{white-space:nowrap;padding:7px 14px;border-radius:20px;font-size:11px;font-weight:500;border:0.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);cursor:pointer;background:transparent;flex-shrink:0}
+.fchip.on{background:#F5A623;color:#0D1B2A;border-color:#F5A623}
+.post{background:#fff;margin:10px 12px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(0,0,0,0.06)}
+.post-head{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.av-a{background:#FFE8D6;color:#8B3A0A}
+.av-b{background:#D4EDF5;color:#0A4D6B}
+.post-img{height:196px;position:relative;overflow:hidden}
+.post-img-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.img-bali{background:#2E7D6F}
+.img-tokyo{background:#2C3E70}
+.img-loc{position:absolute;bottom:10px;left:12px;background:rgba(13,27,42,0.75);border-radius:20px;padding:5px 10px;display:flex;align-items:center;gap:5px}
+.img-loc-dot{width:6px;height:6px;border-radius:50%;background:#F5A623}
+.img-loc-txt{font-size:10px;color:#fff;font-weight:500}
+.post-body{padding:12px 14px}
+.post-txt{font-size:12px;color:#2A3A4A;line-height:1.6;margin-bottom:6px}
+.post-tags{font-size:11px;color:#5FA8D3;margin-bottom:10px}
+.post-actions{display:flex;align-items:center;gap:0;border-top:0.5px solid #F0F3F7;padding-top:10px}
+.pact{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 0;font-size:11px;color:#8A96A8;cursor:pointer}
+.pact.red{color:#E84D7A}
+.pact-sp{flex:1}
+.pact svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.pact.red svg{fill:#E84D7A;stroke:#E84D7A}
+
+/* ──────────────────────────────
+   DISCOVER
+────────────────────────────── */
+.disc-top{background:#0D1B2A;padding:0 14px 14px}
+.disc-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:10px}
+.disc-filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}
+.dfc{white-space:nowrap;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 12px;font-size:10px;font-weight:500;color:rgba(255,255,255,0.8);cursor:pointer}
+.dfc.on{background:#F5A623;color:#0D1B2A;border-color:#F5A623}
+.tcard{margin:12px 12px 0;border-radius:22px;overflow:hidden;background:#fff;border:0.5px solid rgba(0,0,0,0.07)}
+.tcard-hero{height:130px;position:relative}
+.hero-bali{background:#1C5F5A}
+.hero-delhi{background:#2A3A6E}
+.compat-ring{position:absolute;top:12px;right:12px;width:52px;height:52px;border-radius:50%;background:#0D1B2A;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid #F5A623}
+.compat-num{font-size:14px;font-weight:500;color:#F5A623;line-height:1}
+.compat-pct{font-size:8px;color:rgba(255,255,255,0.6);line-height:1;margin-top:1px}
+.tcard-av{position:absolute;bottom:-22px;left:14px;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;border:3px solid #fff}
+.tav-a{background:#FFD0B5;color:#7B2D00}
+.tav-b{background:#B8D4F0;color:#1A3A6E}
+.tcard-body{padding:10px 14px 0;margin-top:24px}
+.tcard-name-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.tcard-name{font-size:15px;font-weight:500;color:#0D1B2A}
+.tcard-route{font-size:11px;color:#8A96A8;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.route-dot{width:5px;height:5px;border-radius:50%;background:#F5A623;flex-shrink:0}
+.tcard-bio{font-size:11px;color:#4A5568;line-height:1.5;margin-bottom:10px}
+.why-lbl{font-size:9px;font-weight:500;color:#8A96A8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.why-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.wchip{background:#F0F7FF;border:0.5px solid #BDD7F5;border-radius:10px;padding:3px 8px;font-size:10px;color:#1A4A7A;font-weight:500}
+.tcard-acts{display:flex;gap:8px;padding:10px 14px 14px;border-top:0.5px solid #F0F3F7}
+.btn-connect{flex:1;background:#0D1B2A;color:#fff;border-radius:12px;padding:11px;font-size:13px;font-weight:500;border:none;cursor:pointer}
+.btn-view{background:#F4F6FA;color:#0D1B2A;border-radius:12px;padding:11px 14px;font-size:12px;font-weight:500;border:0.5px solid #E3E8EF;cursor:pointer}
+.btn-more{width:38px;height:38px;border-radius:50%;border:0.5px solid #E3E8EF;background:#F4F6FA;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.btn-more svg{width:14px;height:14px;fill:#8A96A8;stroke:none}
+
+/* ──────────────────────────────
+   CONNECTIONS
+────────────────────────────── */
+.conn-bg{background:#F4F6FA}
+.conn-tabs-row{display:flex;background:#fff;border-bottom:0.5px solid #E8ECF2}
+.ctab{flex:1;text-align:center;padding:13px 4px;font-size:12px;font-weight:500;color:#8A96A8;cursor:pointer;position:relative}
+.ctab.on{color:#0D1B2A}
+.ctab.on::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:2px;background:#F5A623;border-radius:1px}
+.ccount{display:inline-flex;align-items:center;justify-content:center;background:#F5A623;color:#0D1B2A;border-radius:10px;font-size:9px;font-weight:500;padding:1px 5px;margin-left:3px;min-width:16px}
+.conn-card{background:#fff;border-radius:18px;margin:10px 12px 0;padding:14px;border:0.5px solid rgba(0,0,0,0.07)}
+.cc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cc-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;flex-shrink:0}
+.cc-av-a{background:#FFD0B5;color:#7B2D00}
+.cc-av-b{background:#B8D4F0;color:#1A3A6E}
+.cc-info{flex:1}
+.cc-name{font-size:14px;font-weight:500;color:#0D1B2A;margin-bottom:2px}
+.cc-meta{font-size:10px;color:#8A96A8;display:flex;align-items:center;gap:5px}
+.cc-score{font-size:11px;font-weight:500;color:#F5A623}
+.cc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.cc-chip{background:#F0F7FF;border:0.5px solid #BDD7F5;border-radius:10px;padding:3px 8px;font-size:10px;color:#1A4A7A;font-weight:500}
+.cc-acts{display:flex;gap:7px}
+.cc-accept{flex:1;background:#0D1B2A;color:#fff;border-radius:11px;padding:10px;font-size:12px;font-weight:500;border:none;cursor:pointer}
+.cc-reject{background:#F4F6FA;color:#6B7280;border-radius:11px;padding:10px 14px;font-size:12px;font-weight:500;border:0.5px solid #E3E8EF;cursor:pointer}
+.cc-msg{flex:1;background:#FFF3DC;color:#92570A;border-radius:11px;padding:10px;font-size:12px;font-weight:500;border:0.5px solid #FFD97A;cursor:pointer}
+
+/* ──────────────────────────────
+   CHAT
+────────────────────────────── */
+.chat-list-bg{background:#F4F6FA}
+.chat-search{margin:12px 12px 8px;background:#fff;border-radius:14px;padding:10px 14px;border:0.5px solid #E3E8EF;font-size:12px;color:#B0BAC9;display:flex;align-items:center;gap:8px}
+.chat-search svg{width:14px;height:14px;fill:none;stroke:#B0BAC9;stroke-width:1.5;stroke-linecap:round;flex-shrink:0}
+.chat-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border-bottom:0.5px solid #F0F3F7;cursor:pointer;position:relative}
+.chat-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;flex-shrink:0;position:relative}
+.chat-av-a{background:#FFD0B5;color:#7B2D00}
+.chat-av-b{background:#B8D4F0;color:#1A3A6E}
+.online-dot{position:absolute;bottom:1px;right:1px;width:11px;height:11px;border-radius:50%;background:#22C55E;border:2px solid #fff}
+.chat-body{flex:1;min-width:0}
+.chat-n{font-size:13px;font-weight:500;color:#0D1B2A;margin-bottom:2px}
+.chat-p{font-size:11px;color:#8A96A8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-r{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.chat-t{font-size:10px;color:#B0BAC9}
+.unread{width:18px;height:18px;border-radius:50%;background:#F5A623;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#0D1B2A}
+.chat-empty{margin:20px 12px;background:#fff;border-radius:18px;padding:24px;text-align:center;border:0.5px dashed #D0D8E8}
+.empty-icon{font-size:36px;margin-bottom:12px;line-height:1}
+.empty-h{font-size:14px;font-weight:500;color:#0D1B2A;margin-bottom:4px}
+.empty-p{font-size:11px;color:#8A96A8;margin-bottom:14px;line-height:1.5}
+.empty-cta{display:inline-block;background:#0D1B2A;color:#fff;border-radius:10px;padding:9px 18px;font-size:12px;font-weight:500;cursor:pointer}
+
+/* ──────────────────────────────
+   PROFILE
+────────────────────────────── */
+.prof-hero{background:#0D1B2A;position:relative;overflow:hidden;padding:20px 16px 36px}
+.prof-geo{position:absolute;width:180px;height:180px;border-radius:50%;background:#F5A62310;right:-50px;top:-50px}
+.prof-edit{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:500;color:#fff;cursor:pointer}
+.prof-av{width:80px;height:80px;border-radius:50%;background:#F5A62330;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:500;color:#F5A623;margin:0 auto 12px;border:2.5px solid rgba(245,166,35,0.4)}
+.prof-name{font-size:20px;font-weight:500;color:#fff;text-align:center;margin-bottom:3px}
+.prof-route{font-size:11px;color:rgba(255,255,255,0.55);text-align:center;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:5px}
+.prof-chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.prof-chip{background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.18);border-radius:20px;padding:5px 12px;font-size:10px;font-weight:500;color:rgba(255,255,255,0.9)}
+.prof-chip.amber{background:rgba(245,166,35,0.18);border-color:rgba(245,166,35,0.4);color:#F5A623}
+
+.prof-body{background:#F4F6FA;flex:1}
+.prof-section{background:#fff;margin:10px 12px 0;border-radius:18px;padding:14px;border:0.5px solid rgba(0,0,0,0.06)}
+.ps-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ps-title{font-size:11px;font-weight:500;color:#8A96A8;text-transform:uppercase;letter-spacing:0.5px}
+.ps-action{font-size:11px;color:#F5A623;font-weight:500;cursor:pointer}
+.strength-track{background:#F0F3F7;border-radius:4px;height:5px;margin-bottom:8px}
+.strength-fill{background:#F5A623;border-radius:4px;height:5px;width:72%}
+.strength-txt{font-size:11px;color:#F5A623;font-weight:500;margin-bottom:10px}
+.cl-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:0.5px solid #F4F6FA;font-size:12px;color:#2A3A4A}
+.cl-item:last-child{border:none}
+.cl-done{width:18px;height:18px;border-radius:50%;background:#22C55E;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cl-done svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cl-todo{width:18px;height:18px;border-radius:50%;border:1.5px solid #D0D8E8;flex-shrink:0}
+.int-chips{display:flex;gap:6px;flex-wrap:wrap}
+.int-chip{background:#F0F7FF;border:0.5px solid #BDD7F5;border-radius:10px;padding:5px 11px;font-size:11px;color:#1A4A7A;font-weight:500}
+.int-chip.add{border-style:dashed;color:#B0BAC9;border-color:#D0D8E8;background:#F8FAFB}
+</style>
+
+<h2 class="sr-only">Huntmate redesigned UI — immersive travel social app screens</h2>
+
+<div style="padding:12px 0 16px">
+<div class="nav-row">
+  <div class="ntab on" onclick="show('auth',this)">Auth</div>
+  <div class="ntab" onclick="show('feed',this)">Feed</div>
+  <div class="ntab" onclick="show('disc',this)">Discover</div>
+  <div class="ntab" onclick="show('conn',this)">Connections</div>
+  <div class="ntab" onclick="show('chat',this)">Chat</div>
+  <div class="ntab" onclick="show('prof',this)">Profile</div>
+</div>
+
+<div class="phone">
+
+<!-- ===== AUTH ===== -->
+<div class="screen on" id="s-auth">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="auth-bg">
+    <div class="auth-geo-1"></div><div class="auth-geo-2"></div><div class="auth-geo-3"></div>
+    <div class="auth-content">
+      <div class="auth-wordmark"><div class="auth-wm-dot"></div><div class="auth-wm-txt">Huntmate</div></div>
+      <div class="auth-h1">Find your next <em>travel partner</em></div>
+      <div class="auth-sub">Connect with real travelers heading to the same places. Share moments, plan together, explore more.</div>
+      <div class="auth-pills">
+        <div class="auth-pill">Match by destination</div>
+        <div class="auth-pill">Share trip stories</div>
+        <div class="auth-pill">Chat safely</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-sheet">
+    <div class="seg">
+      <div class="seg-o on">Sign in</div>
+      <div class="seg-o" onclick="this.classList.add('on');this.previousElementSibling.classList.remove('on')">Create account</div>
+    </div>
+    <div class="field"><label>Email address</label><div class="field-box" style="color:#B0BAC9;font-size:12px">you@example.com</div></div>
+    <div class="field"><label>Password</label><div class="field-box pw">••••••••</div></div>
+    <button class="btn-main">Sign in</button>
+    <div class="btn-sub">Don't have an account? <span>Create one</span></div>
+  </div>
+</div>
+
+<!-- ===== FEED ===== -->
+<div class="screen" id="s-feed">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="topchrome">
+    <div class="logo-mark">✦ Huntmate</div>
+    <div class="ic-row">
+      <div class="ic notif-badge">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+      <div class="ic">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="feed-filters">
+    <div class="fchip on">For you</div>
+    <div class="fchip">Saved</div>
+    <div class="fchip">Your destination</div>
+    <div class="fchip">Bali</div>
+  </div>
+  <div class="scrollable feed-wrap">
+    <div class="post">
+      <div class="post-head">
+        <div class="av av-a">SR</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:#0D1B2A">Shreya R.</div>
+          <div style="font-size:10px;color:#8A96A8">Bali, Indonesia · 2h ago</div>
+        </div>
+        <div style="font-size:18px;color:#B0BAC9;cursor:pointer;line-height:1">···</div>
+      </div>
+      <div class="post-img img-bali">
+        <div class="post-img-inner" style="flex-direction:column;gap:8px">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.35"><circle cx="24" cy="16" r="10" fill="#F5A623"/><rect x="4" y="32" width="40" height="14" rx="4" fill="#fff"/><ellipse cx="24" cy="32" rx="12" ry="5" fill="#fff" opacity="0.5"/></svg>
+          <span style="font-size:10px;color:rgba(255,255,255,0.5)">Sunrise · Mount Batur</span>
+        </div>
+        <div class="img-loc"><div class="img-loc-dot"></div><div class="img-loc-txt">Ubud, Bali</div></div>
+      </div>
+      <div class="post-body">
+        <div class="post-txt">Sunrise hike to Mount Batur was absolutely worth the 2am wake-up. The views were breathtaking!</div>
+        <div class="post-tags">#Bali #Hiking #TravelMoment #SoloTravel</div>
+        <div class="post-actions">
+          <div class="pact red">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            42
+          </div>
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            8
+          </div>
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </div>
+          <div class="pact-sp"></div>
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="post">
+      <div class="post-head">
+        <div class="av av-b">JM</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:#0D1B2A">Jake M.</div>
+          <div style="font-size:10px;color:#8A96A8">Tokyo, Japan · 5h ago</div>
+        </div>
+        <div style="font-size:18px;color:#B0BAC9;cursor:pointer;line-height:1">···</div>
+      </div>
+      <div class="post-img img-tokyo">
+        <div class="post-img-inner" style="flex-direction:column;gap:8px">
+          <svg width="44" height="48" viewBox="0 0 44 48" fill="none" opacity="0.35"><rect x="14" y="8" width="16" height="36" rx="2" fill="#fff"/><rect x="6" y="24" width="32" height="20" rx="2" fill="#fff"/><rect x="19" y="0" width="6" height="12" rx="2" fill="#F5A623"/></svg>
+          <span style="font-size:10px;color:rgba(255,255,255,0.5)">Golden hour · Shinjuku</span>
+        </div>
+        <div class="img-loc"><div class="img-loc-dot"></div><div class="img-loc-txt">Shinjuku, Tokyo</div></div>
+      </div>
+      <div class="post-body">
+        <div class="post-txt">Golden hour in Shinjuku. Looking for a travel partner for my Kyoto trip next month — DM me!</div>
+        <div class="post-tags">#Tokyo #Japan #SoloTravel #Kyoto</div>
+        <div class="post-actions">
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            19
+          </div>
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            4
+          </div>
+          <div class="pact">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni on"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="bni-lbl">Feed</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="bni-lbl">Discover</div></div>
+    <div class="bni" style="flex:0;padding:0 8px"><div class="bni-fab"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="bni"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><div class="bni-lbl">Connect</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bni-lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ===== DISCOVER ===== -->
+<div class="screen" id="s-disc">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="topchrome" style="padding-bottom:4px">
+    <div class="logo-mark">✦ Huntmate</div>
+    <div class="ic-row">
+      <div class="ic notif-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+    </div>
+  </div>
+  <div class="disc-top">
+    <div class="disc-sub">Travelers heading your way</div>
+    <div class="disc-filters">
+      <div class="dfc on">All</div>
+      <div class="dfc">Bali</div>
+      <div class="dfc">Hiking</div>
+      <div class="dfc">English</div>
+      <div class="dfc">Budget</div>
+    </div>
+  </div>
+  <div class="scrollable" style="background:#F4F6FA">
+    <div class="tcard">
+      <div class="tcard-hero hero-bali">
+        <div class="compat-ring"><div class="compat-num">87</div><div class="compat-pct">match</div></div>
+        <div class="tcard-av tav-a">AM</div>
+      </div>
+      <div class="tcard-body">
+        <div class="tcard-name-row">
+          <div class="tcard-name">Anika M.</div>
+          <div class="chip chip-teal">Booked</div>
+        </div>
+        <div class="tcard-route"><div class="route-dot"></div>Mumbai → Bali · Jul 10 – 24</div>
+        <div class="tcard-bio">Solo traveler, SCUBA diver, and sunrise chaser. Looking for someone to explore Ubud and the rice terraces!</div>
+        <div class="why-lbl">Why you match</div>
+        <div class="why-chips">
+          <div class="wchip">Same destination</div>
+          <div class="wchip">Overlapping dates</div>
+          <div class="wchip">Adventure style</div>
+          <div class="wchip">Budget tier</div>
+        </div>
+      </div>
+      <div class="tcard-acts">
+        <button class="btn-connect">Connect</button>
+        <button class="btn-view">View profile</button>
+        <div class="btn-more"><svg viewBox="0 0 24 24" fill="#8A96A8"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tcard-hero hero-delhi">
+        <div class="compat-ring" style="border-color:#7BB8F0"><div class="compat-num" style="color:#7BB8F0">74</div><div class="compat-pct">match</div></div>
+        <div class="tcard-av tav-b">RK</div>
+      </div>
+      <div class="tcard-body">
+        <div class="tcard-name-row">
+          <div class="tcard-name">Rahul K.</div>
+          <div class="chip chip-amber">Planning</div>
+        </div>
+        <div class="tcard-route"><div class="route-dot"></div>Delhi → Bali · Jul 15 – Aug 2</div>
+        <div class="tcard-bio">Food lover and cultural explorer. Looking for a calm co-traveler to share villa costs.</div>
+        <div class="why-lbl">Why you match</div>
+        <div class="why-chips">
+          <div class="wchip">Same destination</div>
+          <div class="wchip">Cultural style</div>
+          <div class="wchip">Language match</div>
+        </div>
+      </div>
+      <div class="tcard-acts">
+        <button class="btn-connect">Connect</button>
+        <button class="btn-view">View profile</button>
+        <div class="btn-more"><svg viewBox="0 0 24 24" fill="#8A96A8"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+      </div>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="bni-lbl">Feed</div></div>
+    <div class="bni on"><svg viewBox="0 0 24 24" fill="none" stroke="#0D1B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="bni-lbl" style="color:#0D1B2A">Discover</div></div>
+    <div class="bni" style="flex:0;padding:0 8px"><div class="bni-fab"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><div class="bni-lbl">Connect</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bni-lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ===== CONNECTIONS ===== -->
+<div class="screen" id="s-conn">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="topchrome"><div class="logo-mark">✦ Connections</div></div>
+  <div class="conn-tabs-row">
+    <div class="ctab on">Requests <span class="ccount">2</span></div>
+    <div class="ctab">Accepted</div>
+    <div class="ctab">Declined</div>
+  </div>
+  <div class="scrollable conn-bg">
+    <div class="conn-card">
+      <div class="cc-top">
+        <div class="cc-av cc-av-a">SR</div>
+        <div class="cc-info">
+          <div class="cc-name">Shreya R.</div>
+          <div class="cc-meta"><span class="cc-score">87% match</span> · Bali, Indonesia</div>
+        </div>
+        <div class="chip chip-teal" style="font-size:9px">Booked</div>
+      </div>
+      <div class="cc-chips">
+        <div class="cc-chip">Same destination</div>
+        <div class="cc-chip">Adventure style</div>
+        <div class="cc-chip">Overlapping dates</div>
+      </div>
+      <div class="cc-acts">
+        <button class="cc-accept">Accept</button>
+        <button class="cc-reject">Decline</button>
+      </div>
+    </div>
+    <div class="conn-card">
+      <div class="cc-top">
+        <div class="cc-av cc-av-b">JM</div>
+        <div class="cc-info">
+          <div class="cc-name">Jake M.</div>
+          <div class="cc-meta"><span class="cc-score">74% match</span> · Tokyo, Japan</div>
+        </div>
+        <div class="chip chip-amber" style="font-size:9px">Planning</div>
+      </div>
+      <div class="cc-chips">
+        <div class="cc-chip">Cultural style</div>
+        <div class="cc-chip">Language match</div>
+        <div class="cc-chip">Budget tier</div>
+      </div>
+      <div class="cc-acts">
+        <button class="cc-accept">Accept</button>
+        <button class="cc-reject">Decline</button>
+      </div>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="bni-lbl">Feed</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="bni-lbl">Discover</div></div>
+    <div class="bni" style="flex:0;padding:0 8px"><div class="bni-fab"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="bni on"><svg viewBox="0 0 24 24" fill="none" stroke="#0D1B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><div class="bni-lbl" style="color:#0D1B2A">Connect</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bni-lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ===== CHAT ===== -->
+<div class="screen" id="s-chat">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="topchrome"><div class="logo-mark">✦ Messages</div></div>
+  <div class="scrollable chat-list-bg">
+    <div class="chat-search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search conversations
+    </div>
+    <div style="background:#fff;margin:0 0 8px">
+      <div class="chat-row">
+        <div class="chat-av chat-av-a">AM<div class="online-dot"></div></div>
+        <div class="chat-body">
+          <div class="chat-n">Anika M.</div>
+          <div class="chat-p">So excited for Ubud! Are you free the 12th?</div>
+        </div>
+        <div class="chat-r">
+          <div class="chat-t">2m</div>
+          <div class="unread">2</div>
+        </div>
+      </div>
+      <div class="chat-row">
+        <div class="chat-av chat-av-b">JM</div>
+        <div class="chat-body">
+          <div class="chat-n">Jake M.</div>
+          <div class="chat-p">Start the conversation!</div>
+        </div>
+        <div class="chat-r">
+          <div class="chat-t">Yesterday</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-empty">
+      <div class="empty-icon" style="font-size:30px;color:#D0D8E8">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#D0D8E8" stroke-width="1.5"/><path d="M13 17a7 7 0 0114 0c0 5-7 10-7 10S13 22 13 17z" fill="#F0F3F7"/><circle cx="20" cy="17" r="2.5" fill="#B0BAC9"/></svg>
+      </div>
+      <div class="empty-h">No more messages yet</div>
+      <div class="empty-p">Connect with travelers heading to your destination to start planning together.</div>
+      <div class="empty-cta">Find travelers</div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="bni-lbl">Feed</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="bni-lbl">Discover</div></div>
+    <div class="bni" style="flex:0;padding:0 8px"><div class="bni-fab"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><div class="bni-lbl">Connect</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bni-lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ===== PROFILE ===== -->
+<div class="screen" id="s-prof">
+  <div class="sbar"><span class="sbar-time">9:41</span><div class="sbar-icons"><div class="sbar-dot"></div><div class="sbar-dot"></div><div class="sbar-dot"></div></div></div>
+  <div class="scrollable">
+    <div class="prof-hero">
+      <div class="prof-geo"></div>
+      <div class="prof-edit">Edit profile</div>
+      <div class="prof-av">YO</div>
+      <div class="prof-name">Your Name</div>
+      <div class="prof-route">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Mumbai → Bali · Jul 10 – 24
+      </div>
+      <div class="prof-chips">
+        <div class="prof-chip amber">Booked</div>
+        <div class="prof-chip">Adventure</div>
+        <div class="prof-chip">Mid-range</div>
+        <div class="prof-chip">English, Hindi</div>
+      </div>
+    </div>
+    <div class="prof-body">
+      <div class="prof-section">
+        <div class="ps-head"><div class="ps-title">Profile strength</div><div class="ps-action">View tips</div></div>
+        <div class="strength-track"><div class="strength-fill"></div></div>
+        <div class="strength-txt">72% — add interests to boost visibility</div>
+        <div class="cl-item"><div class="cl-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Profile photo</div>
+        <div class="cl-item"><div class="cl-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Bio added</div>
+        <div class="cl-item"><div class="cl-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Destination set</div>
+        <div class="cl-item"><div class="cl-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Trip dates confirmed</div>
+        <div class="cl-item"><div class="cl-todo"></div><span style="color:#8A96A8">Add interests</span></div>
+        <div class="cl-item"><div class="cl-todo"></div><span style="color:#8A96A8">Set languages</span></div>
+      </div>
+      <div class="prof-section" style="margin-top:10px">
+        <div class="ps-head"><div class="ps-title">About</div><div class="ps-action">Edit</div></div>
+        <div style="font-size:12px;color:#4A5568;line-height:1.6">Solo traveler passionate about sunsets, street food, and scuba diving. Planning a summer trip to Bali!</div>
+      </div>
+      <div class="prof-section" style="margin-top:10px;margin-bottom:14px">
+        <div class="ps-head"><div class="ps-title">Interests & style</div><div class="ps-action">Edit</div></div>
+        <div class="int-chips">
+          <div class="int-chip">Hiking</div>
+          <div class="int-chip">Scuba</div>
+          <div class="int-chip">Street food</div>
+          <div class="int-chip">Culture</div>
+          <div class="int-chip">Photography</div>
+          <div class="int-chip add">+ Add more</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="bni-lbl">Feed</div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="bni-lbl">Discover</div></div>
+    <div class="bni" style="flex:0;padding:0 8px"><div class="bni-fab"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="#B0BAC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><div class="bni-lbl">Connect</div></div>
+    <div class="bni on"><svg viewBox="0 0 24 24" fill="none" stroke="#0D1B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bni-lbl" style="color:#0D1B2A">Profile</div></div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  document.getElementById('s-' + id).classList.add('on');
+  el.classList.add('on');
+}
+</script>
